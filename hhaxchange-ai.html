@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HHAeXchange+ AI Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --indigo: #4f46e5;
+    --purple: #7c3aed;
+    --ai-grad: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    --ai-grad-soft: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --sidebar-bg: #0f172a;
+    --sidebar-hover: #1e293b;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.18);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0f172a;
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0 16px;
+    overflow-y: auto;
+    height: 100vh;
+    border-right: 1px solid #1e293b;
+    scrollbar-width: thin;
+    scrollbar-color: #1e293b transparent;
+  }
+  .sidebar-logo {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .sidebar-logo h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo span { background: var(--ai-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sidebar-logo p { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+  .wave-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--gray-500);
+    padding: 20px 20px 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 0.15s;
+    font-size: 13px;
+    color: var(--gray-400);
+    font-weight: 500;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: var(--sidebar-hover); color: white; }
+  .nav-item.active { background: var(--sidebar-hover); color: white; border-left-color: #2563eb; }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e293b; }
+
+  /* ─── MAIN ─── */
+  .main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: #0f172a;
+    overflow: hidden;
+  }
+
+  /* ─── PHONE FRAME ─── */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: white;
+    border-radius: 50px;
+    box-shadow: 0 0 0 10px #1e293b, 0 0 0 12px #0f172a, var(--shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 32px;
+    background: #1e293b;
+    border-radius: 0 0 20px 20px;
+    z-index: 10;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-800);
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+  .status-icons { display: flex; gap: 4px; }
+
+  /* SCREEN CONTAINER */
+  .screen-container { flex: 1; overflow: hidden; position: relative; }
+  .screen {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+    scrollbar-width: none;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.active { display: flex; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    display: flex;
+    border-top: 1px solid var(--gray-200);
+    background: white;
+    flex-shrink: 0;
+    padding-bottom: 8px;
+  }
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 4px 6px;
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--gray-400);
+    font-weight: 600;
+    transition: color 0.15s;
+  }
+  .bottom-nav-item .bni { font-size: 20px; }
+  .bottom-nav-item.active { color: var(--blue); }
+
+  /* ─── COMMON COMPONENTS ─── */
+  .screen-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--gray-100);
+    flex-shrink: 0;
+  }
+  .back-btn {
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--gray-600);
+    line-height: 1;
+  }
+  .screen-title { font-size: 17px; font-weight: 700; color: var(--gray-900); }
+  .ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--ai-grad);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  /* CARDS */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+    padding: 16px;
+    margin: 0 16px 12px;
+  }
+  .card-ai {
+    background: var(--ai-grad-soft);
+    border: 1px solid #bfdbfe;
+  }
+
+  /* PILL TAGS */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .tag-green { background: var(--green-light); color: var(--green); }
+  .tag-red { background: var(--red-light); color: var(--red); }
+  .tag-amber { background: var(--amber-light); color: var(--amber); }
+  .tag-blue { background: #dbeafe; color: var(--blue); }
+
+  /* AVATAR */
+  .avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .avatar-blue { background: #dbeafe; }
+  .avatar-purple { background: #ede9fe; }
+  .avatar-green { background: var(--green-light); }
+
+  /* ─── LOGIN SCREEN ─── */
+  #screen-login {
+    background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+    justify-content: center;
+    align-items: center;
+    padding: 40px 28px;
+  }
+  .login-logo { text-align: center; margin-bottom: 48px; }
+  .login-logo .logo-icon { font-size: 48px; margin-bottom: 12px; }
+  .login-logo h2 { font-size: 26px; font-weight: 800; background: var(--ai-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+  .login-logo p { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+  .login-form { width: 100%; }
+  .login-field {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 14px 16px;
+    width: 100%;
+    color: white;
+    font-size: 15px;
+    font-family: inherit;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .login-field:focus { border-color: #60a5fa; }
+  .login-field::placeholder { color: #64748b; }
+  .login-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--ai-grad);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+    transition: opacity 0.2s;
+  }
+  .login-btn:hover { opacity: 0.9; }
+  .login-biometric { text-align: center; color: #64748b; font-size: 12px; margin-top: 16px; }
+
+  /* ─── HOME SCREEN ─── */
+  .home-header {
+    background: var(--ai-grad);
+    padding: 20px 20px 32px;
+    color: white;
+  }
+  .home-greeting { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .home-meta { font-size: 13px; opacity: 0.8; display: flex; gap: 12px; }
+  .home-meta span { display: flex; align-items: center; gap: 4px; }
+  .home-body { margin-top: -16px; border-radius: 18px 18px 0 0; background: var(--gray-50); padding: 8px 0 0; flex: 1; }
+
+  .aria-card {
+    margin: 0 16px 12px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #5b21b6 100%);
+    color: white;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .aria-card::before {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .aria-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .aria-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; opacity: 0.8; }
+  .live-dot { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; }
+  .live-dot::before { content: ''; width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+  .aria-message { font-size: 13px; line-height: 1.5; opacity: 0.95; margin-bottom: 14px; }
+  .aria-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: white; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 20px; cursor: pointer; font-family: inherit; margin-right: 8px; }
+
+  .section-title { font-size: 13px; font-weight: 700; color: var(--gray-500); letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 20px 8px; }
+
+  .shift-card {
+    margin: 0 16px 10px;
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--gray-200);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+  }
+  .shift-card:hover { box-shadow: var(--shadow); }
+  .shift-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .shift-name { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+  .shift-time { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .shift-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+  .nudge-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--gray-200);
+    padding: 14px 16px;
+    margin: 0 16px 10px;
+    cursor: pointer;
+  }
+  .nudge-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .nudge-icon { font-size: 20px; }
+  .nudge-title { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+  .nudge-subtitle { font-size: 11px; color: var(--blue); font-weight: 600; }
+  .nudge-text { font-size: 13px; color: var(--gray-600); line-height: 1.4; }
+
+  .timesheet-banner {
+    margin: 0 16px 12px;
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .timesheet-banner-left { display: flex; align-items: center; gap: 10px; }
+  .ts-icon { font-size: 22px; }
+  .ts-title { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+  .ts-sub { font-size: 12px; color: var(--amber); font-weight: 600; }
+
+  /* ─── AI CHAT SCREEN ─── */
+  .chat-tabs {
+    display: flex;
+    padding: 12px 16px 0;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .chat-tab {
+    flex: 1;
+    padding: 9px 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid var(--gray-200);
+    color: var(--gray-500);
+    background: white;
+  }
+  .chat-tab.active { background: var(--ai-grad); color: white; border-color: transparent; }
+
+  .chat-intro {
+    margin: 12px 16px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid var(--gray-200);
+  }
+  .chat-intro.aria-intro { background: linear-gradient(135deg, #eff6ff, #f5f3ff); border-color: #bfdbfe; }
+  .chat-intro.caree-intro { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: #bbf7d0; }
+  .chat-intro.knowledge-intro { background: linear-gradient(135deg, #fff7ed, #fef9c3); border-color: #fed7aa; }
+  .chat-intro-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .chat-intro-icon { font-size: 24px; }
+  .chat-intro-name { font-size: 15px; font-weight: 700; }
+  .chat-intro-status { font-size: 11px; color: var(--green); font-weight: 600; }
+  .chat-intro-text { font-size: 13px; color: var(--gray-600); line-height: 1.4; }
+
+  .quick-questions { padding: 4px 16px 8px; }
+  .qq-label { font-size: 12px; font-weight: 600; color: var(--gray-500); margin-bottom: 8px; }
+  .qq-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .qq-pill {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .qq-pill:hover { background: var(--gray-100); }
+
+  .chat-messages {
+    flex: 1;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .msg { display: flex; gap: 8px; align-items: flex-end; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .msg-bubble.ai {
+    background: white;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-800);
+    border-bottom-left-radius: 4px;
+  }
+  .msg-bubble.ai.thinking {
+    display: flex; gap: 4px; align-items: center; padding: 12px 14px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{ transform:translateY(0); } 40%{ transform:translateY(-6px); } }
+  .msg-bubble.user { background: var(--ai-grad); color: white; border-bottom-right-radius: 4px; }
+  .msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--ai-grad-soft); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+
+  .chat-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 12px;
+    border-top: 1px solid var(--gray-100);
+    flex-shrink: 0;
+    background: white;
+  }
+  .chat-input {
+    flex: 1;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 24px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    color: var(--gray-800);
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: #93c5fd; background: white; }
+  .chat-send {
+    width: 38px; height: 38px;
+    background: var(--ai-grad);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+  .chat-send:hover { opacity: 0.85; }
+  .chat-voice {
+    width: 38px; height: 38px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 50%;
+    color: var(--gray-600);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ─── SCHEDULE SCREEN ─── */
+  .week-strip {
+    display: flex;
+    gap: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .week-strip::-webkit-scrollbar { display: none; }
+  .day-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    min-width: 48px;
+    transition: background 0.2s;
+    border: 1.5px solid transparent;
+  }
+  .day-pill:hover { background: var(--gray-100); }
+  .day-pill.active { background: var(--ai-grad); color: white; border-color: transparent; }
+  .day-pill.active .day-name { color: rgba(255,255,255,0.7); }
+  .day-name { font-size: 10px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; }
+  .day-num { font-size: 17px; font-weight: 700; color: var(--gray-800); }
+  .day-pill.active .day-num { color: white; }
+
+  .sched-date-header { font-size: 15px; font-weight: 700; color: var(--gray-800); padding: 4px 20px 12px; display: flex; align-items: center; gap: 8px; }
+  .sched-shift {
+    margin: 0 16px 12px;
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .sched-shift-header { padding: 14px 16px 10px; }
+  .sched-shift-name { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+  .sched-shift-time { font-size: 12px; color: var(--gray-500); margin: 2px 0; }
+  .sched-shift-loc { font-size: 12px; color: var(--gray-500); }
+  .sched-shift-status { padding: 10px 16px 12px; background: var(--gray-50); border-top: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; }
+  .sched-shift-status-text { font-size: 12px; color: var(--gray-500); }
+  .sched-shift-actions { display: flex; gap: 8px; }
+  .sched-btn {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .sched-btn:hover { opacity: 0.85; }
+  .sched-btn-primary { background: var(--blue); color: white; }
+  .sched-btn-ghost { background: var(--gray-100); color: var(--gray-700); }
+
+  .ai-booking-btn {
+    margin: 4px 16px 16px;
+    background: var(--ai-grad-soft);
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .aib-left { display: flex; align-items: center; gap: 10px; }
+  .aib-icon { font-size: 24px; }
+  .aib-title { font-size: 14px; font-weight: 700; color: var(--blue); }
+  .aib-sub { font-size: 12px; color: var(--gray-500); }
+
+  /* ─── VISIT DETAIL SCREEN ─── */
+  .visit-header {
+    background: var(--ai-grad);
+    padding: 16px 20px 28px;
+    color: white;
+  }
+  .visit-client { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .client-avatar { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .client-name { font-size: 18px; font-weight: 700; }
+  .client-meta { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .condition-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cond-tag { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: white; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+  .checkin-card {
+    margin: -12px 16px 12px;
+    background: var(--green-light);
+    border: 1px solid #86efac;
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .checkin-icon { font-size: 20px; }
+  .checkin-text { font-size: 13px; font-weight: 600; color: var(--green); }
+  .checkin-sub { font-size: 11px; color: #15803d; }
+
+  .ai-brief-card {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+  .ai-brief-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .ai-brief-title { font-size: 14px; font-weight: 700; color: var(--indigo); display: flex; align-items: center; gap: 6px; }
+  .ai-brief-meta { font-size: 11px; color: var(--gray-400); }
+  .ai-brief-text { font-size: 12px; color: var(--gray-700); line-height: 1.5; white-space: pre-line; }
+
+  .tasks-card { margin: 0 16px 12px; background: white; border-radius: 14px; border: 1px solid var(--gray-200); padding: 14px 16px; }
+  .tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .tasks-title { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+  .tasks-progress { font-size: 12px; color: var(--gray-400); font-weight: 600; }
+  .task-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+  .task-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .task-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gray-300); display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .task-check.done { background: var(--green); border-color: var(--green); color: white; }
+  .task-check.pending { border-color: var(--blue); }
+  .task-name { font-size: 13px; color: var(--gray-700); flex: 1; }
+  .task-name.done { text-decoration: line-through; color: var(--gray-400); }
+  .task-time { font-size: 11px; color: var(--gray-400); }
+  .task-due { font-size: 11px; color: var(--red); font-weight: 600; }
+
+  .action-btns { display: flex; gap: 10px; padding: 4px 16px 16px; flex-shrink: 0; }
+  .action-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: opacity 0.2s;
+  }
+  .action-btn:hover { opacity: 0.85; }
+  .action-btn-primary { background: var(--ai-grad); color: white; }
+  .action-btn-ghost { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); }
+  .action-btn-warning { background: var(--red-light); color: var(--red); }
+
+  /* ─── VOICE SCREEN ─── */
+  #screen-voice {
+    background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+    align-items: center;
+    padding: 24px;
+    gap: 20px;
+    justify-content: flex-start;
+  }
+  .voice-header { display: flex; align-items: center; gap: 12px; width: 100%; }
+  .voice-back { font-size: 22px; cursor: pointer; color: rgba(255,255,255,0.6); }
+  .voice-title { font-size: 18px; font-weight: 700; color: white; }
+  .voice-status { font-size: 12px; font-weight: 600; color: #4ade80; background: rgba(74,222,128,0.15); padding: 4px 12px; border-radius: 20px; }
+  .voice-orb-container { display: flex; align-items: center; justify-content: center; margin: 20px 0; }
+  .voice-orb {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: var(--ai-grad);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 52px;
+    box-shadow: 0 0 0 16px rgba(99,102,241,0.15), 0 0 0 32px rgba(99,102,241,0.08);
+    animation: orb-pulse 2s infinite;
+    cursor: pointer;
+  }
+  @keyframes orb-pulse { 0%,100%{ box-shadow: 0 0 0 16px rgba(99,102,241,0.15), 0 0 0 32px rgba(99,102,241,0.08); } 50%{ box-shadow: 0 0 0 24px rgba(99,102,241,0.2), 0 0 0 48px rgba(99,102,241,0.06); } }
+  .voice-hint { font-size: 14px; color: rgba(255,255,255,0.6); text-align: center; }
+  .voice-commands { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .voice-cmd-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 0.8px; text-transform: uppercase; }
+  .voice-cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .voice-cmd-pill {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 9px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+    text-align: left;
+  }
+  .voice-cmd-pill:hover { background: rgba(255,255,255,0.12); }
+  .voice-response {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 14px 16px;
+    width: 100%;
+  }
+  .voice-response-label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; margin-bottom: 6px; }
+  .voice-response-text { font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.5; }
+
+  /* ─── COMMUNITY SCREEN ─── */
+  .community-banner {
+    background: var(--ai-grad);
+    margin: 12px 16px;
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .comm-banner-left .rank { font-size: 18px; font-weight: 800; }
+  .comm-banner-left .rank-sub { font-size: 12px; opacity: 0.8; }
+  .comm-banner-right { font-size: 28px; }
+  .comm-view-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px; margin-top: 8px; cursor: pointer; font-family: inherit; }
+
+  .feed-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 20px 10px; }
+  .feed-title { font-size: 15px; font-weight: 700; color: var(--gray-800); }
+  .feed-new { background: #dbeafe; color: var(--blue); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+
+  .feed-post {
+    margin: 0 16px 12px;
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--gray-200);
+    padding: 14px 16px;
+  }
+  .feed-post-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .feed-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
+  .feed-author { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+  .feed-meta { font-size: 11px; color: var(--gray-400); }
+  .top-badge { font-size: 10px; font-weight: 700; background: #fef9c3; color: #854d0e; padding: 2px 6px; border-radius: 6px; }
+  .official-badge { font-size: 10px; font-weight: 700; background: #dbeafe; color: var(--blue); padding: 2px 6px; border-radius: 6px; }
+  .feed-text { font-size: 13px; color: var(--gray-700); line-height: 1.4; }
+  .feed-actions { display: flex; gap: 12px; margin-top: 10px; border-top: 1px solid var(--gray-100); padding-top: 10px; }
+  .feed-action { font-size: 12px; color: var(--gray-400); font-weight: 600; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .feed-action:hover { color: var(--blue); }
+
+  /* ─── PROFILE SCREEN ─── */
+  .profile-header {
+    background: var(--ai-grad);
+    padding: 20px 20px 36px;
+    color: white;
+    text-align: center;
+  }
+  .profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 12px; }
+  .profile-name { font-size: 20px; font-weight: 800; }
+  .profile-sub { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .profile-badges { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
+  .profile-badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+
+  .stats-row {
+    display: flex;
+    gap: 0;
+    margin: -16px 16px 16px;
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .stat-cell { flex: 1; padding: 16px 12px; text-align: center; border-right: 1px solid var(--gray-100); }
+  .stat-cell:last-child { border-right: none; }
+  .stat-val { font-size: 22px; font-weight: 800; color: var(--gray-900); }
+  .stat-label { font-size: 11px; color: var(--gray-400); font-weight: 600; margin-top: 2px; }
+
+  .insight-card { margin: 0 16px 12px; background: var(--ai-grad-soft); border: 1px solid #bfdbfe; border-radius: 14px; padding: 14px 16px; }
+  .insight-header { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .insight-title { font-size: 14px; font-weight: 700; color: var(--blue); }
+  .insight-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid #bfdbfe; }
+  .insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .insight-icon { font-size: 16px; flex-shrink: 0; }
+  .insight-text { font-size: 12px; color: var(--gray-700); line-height: 1.4; }
+
+  .achievements-card { margin: 0 16px 12px; background: white; border-radius: 14px; border: 1px solid var(--gray-200); padding: 14px 16px; }
+  .ach-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; cursor: pointer; }
+  .ach-title { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+  .ach-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .ach-badge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ach-badge-icon { font-size: 24px; }
+  .ach-badge-name { font-size: 9px; font-weight: 600; color: var(--gray-500); text-align: center; line-height: 1.2; }
+
+  .settings-list { margin: 0 16px 16px; background: white; border-radius: 14px; border: 1px solid var(--gray-200); overflow: hidden; }
+  .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--gray-100); cursor: pointer; }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item-left { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--gray-700); font-weight: 500; }
+  .settings-item-icon { font-size: 18px; }
+  .settings-item-right { color: var(--gray-400); font-size: 14px; }
+  .settings-item.danger .settings-item-left { color: var(--red); }
+
+  /* ─── MODALS ─── */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    max-height: 90%;
+    overflow-y: auto;
+    scrollbar-width: none;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .modal-sheet::-webkit-scrollbar { display: none; }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--gray-300); border-radius: 2px; margin: 12px auto 4px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 20px 16px; }
+  .modal-title { font-size: 17px; font-weight: 800; color: var(--gray-900); }
+  .modal-close { font-size: 20px; color: var(--gray-400); cursor: pointer; padding: 4px; }
+  .modal-body { padding: 0 20px 32px; }
+
+  /* AI Brief Modal */
+  .ai-modal-summary { background: var(--ai-grad); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+  .ai-modal-summary-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; margin-bottom: 6px; }
+  .ai-modal-summary-text { font-size: 13px; color: white; line-height: 1.5; }
+  .priority-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .priority-item:last-child { border-bottom: none; }
+  .priority-text { font-size: 13px; color: var(--gray-700); line-height: 1.4; }
+  .modal-cta {
+    width: 100%;
+    padding: 15px;
+    background: var(--ai-grad);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 16px;
+  }
+
+  /* Nudges Modal */
+  .nudge-modal-item { background: var(--gray-50); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .nudge-modal-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .nudge-modal-icon { font-size: 20px; }
+  .nudge-modal-title { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+  .nudge-modal-text { font-size: 13px; color: var(--gray-600); line-height: 1.4; }
+
+  /* Translation Modal */
+  .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .lang-btn { background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 12px; padding: 12px; text-align: center; font-size: 13px; font-weight: 600; color: var(--gray-700); cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .lang-btn:hover, .lang-btn.active { background: var(--ai-grad-soft); border-color: #93c5fd; color: var(--blue); }
+  .translation-result { background: var(--ai-grad-soft); border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px; }
+  .translation-label { font-size: 11px; font-weight: 700; color: var(--blue); letter-spacing: 0.5px; margin-bottom: 8px; }
+  .translation-text { font-size: 13px; color: var(--gray-700); line-height: 1.5; margin-bottom: 10px; }
+  .read-aloud-btn { background: var(--blue); color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+
+  /* Documentation Modal */
+  .doc-note { background: var(--gray-50); border-radius: 12px; padding: 14px; font-size: 12px; color: var(--gray-700); line-height: 1.6; font-family: 'DM Mono', monospace; white-space: pre-wrap; margin-bottom: 12px; border: 1px solid var(--gray-200); }
+  .doc-actions { display: flex; gap: 8px; }
+  .doc-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .doc-btn-primary { background: var(--green); color: white; }
+  .doc-btn-ghost { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); }
+
+  /* Missed Visit Modal */
+  .evidence-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: var(--gray-50); border-radius: 12px; margin-bottom: 8px; }
+  .evidence-icon { font-size: 22px; flex-shrink: 0; }
+  .evidence-label { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+  .evidence-detail { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .evidence-check { font-size: 14px; color: var(--green); font-weight: 700; }
+  .ai-assessment { background: var(--green-light); border: 1px solid #86efac; border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  .ai-assessment-text { font-size: 13px; color: var(--green); font-weight: 600; }
+
+  /* Achievements Modal */
+  .ach-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ach-modal-item { background: var(--gray-50); border-radius: 12px; padding: 14px; text-align: center; }
+  .ach-modal-icon { font-size: 32px; margin-bottom: 6px; }
+  .ach-modal-name { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+  .ach-modal-desc { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+  /* Shift Booking Modal */
+  .shift-match { border: 1px solid var(--gray-200); border-radius: 14px; padding: 14px; margin-bottom: 10px; background: white; }
+  .shift-match-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+  .shift-match-name { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+  .shift-match-score { font-size: 13px; font-weight: 700; color: var(--green); }
+  .shift-match-details { font-size: 12px; color: var(--gray-500); margin-bottom: 8px; }
+  .shift-match-reason { background: var(--ai-grad-soft); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--blue); margin-bottom: 10px; }
+  .shift-accept-btn { width: 100%; padding: 10px; background: var(--ai-grad); color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+  /* Timesheet Modals */
+  .ts-form-group { margin-bottom: 14px; }
+  .ts-label { font-size: 12px; font-weight: 700; color: var(--gray-600); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .ts-input, .ts-select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--gray-800);
+    outline: none;
+    background: white;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+  .ts-input:focus, .ts-select:focus { border-color: #60a5fa; }
+  .ts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .signature-pad { background: var(--gray-50); border: 2px dashed var(--gray-300); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; font-size: 13px; color: var(--gray-500); transition: all 0.2s; }
+  .signature-pad.signed { background: var(--green-light); border-color: #86efac; color: var(--green); font-weight: 700; }
+
+  /* ─── UTILITY ─── */
+  .badge-count { background: var(--red); color: white; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 2px 6px; }
+
+  .generating-text { font-size: 12px; color: var(--gray-400); font-style: italic; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .gen-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); animation: bounce 1.2s infinite; }
+  .gen-dot:nth-child(2) { animation-delay: 0.2s; }
+  .gen-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  .agency-card { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+  .agency-name { font-size: 15px; font-weight: 700; color: var(--gray-800); margin-bottom: 2px; }
+  .agency-sub { font-size: 12px; color: var(--amber); font-weight: 600; }
+  .ts-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .ts-comp-cell { background: white; border: 1px solid var(--gray-200); border-radius: 10px; padding: 10px 12px; }
+  .ts-comp-label { font-size: 10px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; }
+  .ts-comp-val { font-size: 16px; font-weight: 700; color: var(--gray-800); margin-top: 2px; }
+
+  .pb-safe { padding-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<!-- ─── SIDEBAR ─── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>✨ <span>HHAeXchange+</span></h1>
+    <p>Powered by AI</p>
+  </div>
+
+  <div class="wave-label">Wave 1 — Foundation</div>
+  <div class="nav-item active" onclick="showScreen('home'); setNav(this)">
+    <span class="icon">🤖</span> Aria AI Companion
+  </div>
+  <div class="nav-item" onclick="showScreen('chat'); setNav(this); switchChatTab('caree')">
+    <span class="icon">💬</span> Caree AI Assistant
+  </div>
+  <div class="nav-item" onclick="showScreen('visit'); setNav(this); openModal('modal-brief')">
+    <span class="icon">📋</span> AI Shift Brief
+  </div>
+  <div class="nav-item" onclick="showScreen('home'); setNav(this); openModal('modal-nudges')">
+    <span class="icon">🔔</span> Smart Nudges
+  </div>
+  <div class="nav-item" onclick="showScreen('chat'); setNav(this); switchChatTab('knowledge')">
+    <span class="icon">🧠</span> Knowledge Copilot
+  </div>
+
+  <div class="wave-label">Wave 2 — Intelligence</div>
+  <div class="nav-item" onclick="showScreen('visit'); setNav(this); openModal('modal-translate')">
+    <span class="icon">🌐</span> AI Translation
+  </div>
+  <div class="nav-item" onclick="showScreen('visit'); setNav(this); openModal('modal-missed')">
+    <span class="icon">⚠️</span> Missed Visit Recovery
+  </div>
+  <div class="nav-item" onclick="showScreen('visit'); setNav(this); openModal('modal-doc')">
+    <span class="icon">✍️</span> AI Documentation
+  </div>
+  <div class="nav-item" onclick="showScreen('voice'); setNav(this)">
+    <span class="icon">🎤</span> Voice-First Mode
+  </div>
+
+  <div class="wave-label">Wave 3 — Growth</div>
+  <div class="nav-item" onclick="showScreen('community'); setNav(this)">
+    <span class="icon">🤝</span> Caregiver Community
+  </div>
+  <div class="nav-item" onclick="showScreen('schedule'); setNav(this); openModal('modal-booking')">
+    <span class="icon">📅</span> AI Shift Booking
+  </div>
+  <div class="nav-item" onclick="showScreen('profile'); setNav(this); openModal('modal-achievements')">
+    <span class="icon">🏆</span> Recognition Engine
+  </div>
+  <div class="nav-item" onclick="showScreen('profile'); setNav(this)">
+    <span class="icon">📊</span> Insight Bridge
+  </div>
+
+  <div class="sidebar-section">
+    <div class="wave-label">🚐 Transport Module</div>
+    <a href="hhaxchange-transport.html" style="text-decoration:none">
+      <div class="nav-item" style="background:linear-gradient(90deg,rgba(14,165,233,.15),rgba(99,102,241,.1));border-left:3px solid #0ea5e9">
+        <span class="icon">🚐</span> <span style="color:white">NEMT Transport App</span>
+        <span style="margin-left:auto;font-size:10px;background:#0ea5e9;color:white;padding:2px 6px;border-radius:6px;font-weight:700">OPEN</span>
+      </div>
+    </a>
+  </div>
+  <div class="sidebar-section">
+    <div class="wave-label">📋 Timesheets</div>
+    <div class="nav-item" onclick="showScreen('home'); setNav(this); openModal('modal-new-ts')">
+      <span class="icon">✏️</span> New Timesheet
+    </div>
+    <div class="nav-item" onclick="showScreen('home'); setNav(this); openModal('modal-agency-ts')">
+      <span class="icon">🔔</span> Agency Request
+    </div>
+  </div>
+</nav>
+
+<!-- ─── MAIN CONTENT ─── -->
+<main class="main">
+  <div class="phone">
+    <div class="phone-notch"></div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <span>9:41 AM</span>
+      <div class="status-icons">
+        <span>📶</span><span>LTE</span><span>🔋 87%</span>
+      </div>
+    </div>
+
+    <!-- SCREENS -->
+    <div class="screen-container">
+
+      <!-- ═══ LOGIN ═══ -->
+      <div class="screen" id="screen-login">
+        <div class="login-logo">
+          <div class="logo-icon">✨</div>
+          <h2>HHAeXchange+</h2>
+          <p>Powered by AI</p>
+        </div>
+        <div class="login-form">
+          <input class="login-field" type="text" placeholder="EMPLOYEE ID" value="CG-10042">
+          <input class="login-field" type="password" placeholder="PASSWORD" value="••••••••">
+          <button class="login-btn" onclick="showScreen('home')">Sign In →</button>
+          <div class="login-biometric">🔒 Face ID / Touch ID enabled</div>
+        </div>
+      </div>
+
+      <!-- ═══ HOME ═══ -->
+      <div class="screen active" id="screen-home">
+        <div class="home-header">
+          <div class="home-greeting">Good morning,<br>Maria G. 👋</div>
+          <div class="home-meta">
+            <span>📍 Brooklyn, NY</span>
+            <span>💼 2 shifts today</span>
+          </div>
+        </div>
+        <div class="home-body">
+          <!-- Aria Card -->
+          <div class="aria-card" style="margin-top:16px">
+            <div class="aria-header">
+              <span class="aria-label">🤖 ARIA AI COMPANION</span>
+              <span class="live-dot">LIVE</span>
+            </div>
+            <div class="aria-message">
+              You have 2 shifts today. Mrs. Johnson loves morning walks — she mentioned her granddaughter visiting this weekend. Remember her BP meds at 10am. You've got this! 🌟
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="aria-btn" onclick="showScreen('chat');updateBottomNav('chat')">💬 Chat with Aria</button>
+              <button class="aria-btn" onclick="showScreen('voice');updateBottomNav('')">🎤 Voice</button>
+            </div>
+          </div>
+
+          <!-- Shift Brief -->
+          <div class="section-title">📋 Today's Shift Brief <span class="ai-badge">✨ AI</span></div>
+
+          <div class="shift-card" onclick="showScreen('visit');updateBottomNav('schedule')">
+            <div class="shift-card-header">
+              <div>
+                <div class="shift-name">Mrs. Eleanor Johnson</div>
+                <div class="shift-time">🕚 10:00 AM – 2:00 PM · 123 Ocean Ave</div>
+              </div>
+              <div style="font-size:24px">👩</div>
+            </div>
+            <div style="font-size:12px;color:var(--gray-600);background:var(--ai-grad-soft);border-radius:8px;padding:8px;margin-bottom:8px">
+              ✨ BP stable 128/82. PT exercises due — left knee. Mood elevated (granddaughter visiting Sat).
+            </div>
+            <div class="shift-tags">
+              <span class="tag tag-green">✓ Stable</span>
+              <span class="tag tag-amber">💊 Meds 10am</span>
+              <span class="tag tag-blue">🏋 PT Today</span>
+            </div>
+          </div>
+
+          <div class="shift-card" onclick="showScreen('visit');updateBottomNav('schedule')">
+            <div class="shift-card-header">
+              <div>
+                <div class="shift-name">Mr. Robert Chen</div>
+                <div class="shift-time">🕐 3:00 PM – 7:00 PM · 456 Main St</div>
+              </div>
+              <div style="font-size:24px">👨</div>
+            </div>
+            <div style="font-size:12px;color:var(--red);background:var(--red-light);border-radius:8px;padding:8px;margin-bottom:8px">
+              ⚠️ Fall risk flagged. Balance issues noted. Ensure walker within reach. Glucose check before dinner.
+            </div>
+            <div class="shift-tags">
+              <span class="tag tag-red">⚠️ Fall Risk</span>
+              <span class="tag tag-amber">🩸 Glucose</span>
+            </div>
+          </div>
+
+          <!-- Timesheet Banner -->
+          <div class="timesheet-banner" onclick="openModal('modal-agency-ts')">
+            <div class="timesheet-banner-left">
+              <div class="ts-icon">📋</div>
+              <div>
+                <div class="ts-title">Timesheet Required</div>
+                <div class="ts-sub">Action Needed</div>
+              </div>
+            </div>
+            <span style="color:var(--amber-light);font-size:20px">›</span>
+          </div>
+
+          <!-- Smart Nudges -->
+          <div class="section-title">🔔 Smart Nudges <span style="background:var(--red);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">3 new</span></div>
+
+          <div class="nudge-card" onclick="openModal('modal-nudges')">
+            <div class="nudge-header">
+              <span class="nudge-icon">💧</span>
+              <div>
+                <div class="nudge-title">Hydration Reminder</div>
+                <div class="nudge-subtitle">Personalized</div>
+              </div>
+            </div>
+            <div class="nudge-text">Mrs. Johnson's intake was low yesterday. Offer water with her 10am meds.</div>
+          </div>
+
+          <div class="nudge-card" onclick="openModal('modal-nudges')" style="margin-bottom:24px">
+            <div class="nudge-header">
+              <span class="nudge-icon">📝</span>
+              <div>
+                <div class="nudge-title">Documentation Tip</div>
+              </div>
+            </div>
+            <div class="nudge-text">3 of your last 5 notes flagged for missing mood observations. Tap to use Doc Copilot.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CHAT ═══ -->
+      <div class="screen" id="screen-chat">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 0;flex-shrink:0">
+          <div class="screen-title">✨ AI Assistant</div>
+          <div style="font-size:12px;color:var(--green);font-weight:600">🍰 Online — Always here</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:8px 20px 4px;flex-shrink:0">
+          <button class="aria-btn" style="font-size:12px;background:transparent;border:none;color:var(--gray-400);padding:4px 0;cursor:pointer" onclick="switchChatTab('aria')">🎤</button>
+        </div>
+
+        <div class="chat-tabs" id="chat-tabs">
+          <div class="chat-tab active" id="tab-aria" onclick="switchChatTab('aria')">🤖 Aria</div>
+          <div class="chat-tab" id="tab-caree" onclick="switchChatTab('caree')">💬 Caree</div>
+          <div class="chat-tab" id="tab-knowledge" onclick="switchChatTab('knowledge')">🧠 Knowledge</div>
+        </div>
+
+        <!-- Aria Panel -->
+        <div id="chat-panel-aria" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+          <div class="chat-intro aria-intro">
+            <div class="chat-intro-header">
+              <span class="chat-intro-icon">🤖</span>
+              <div>
+                <div class="chat-intro-name" style="color:var(--indigo)">Aria</div>
+                <div class="chat-intro-status">Online — Your AI Companion</div>
+              </div>
+            </div>
+            <div class="chat-intro-text">Good morning, Maria! 🌟 I've reviewed today's schedule. Mrs. Johnson has been asking about you! Ready to make a difference together?</div>
+          </div>
+          <div class="chat-messages" id="msgs-aria">
+            <div class="msg">
+              <div class="msg-avatar">🤖</div>
+              <div class="msg-bubble ai">Good morning! I'm Aria, your AI companion. I've reviewed today's schedule. You have 2 shifts. Ready to make a difference together? 🌟</div>
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <button class="chat-voice" onclick="showScreen('voice')">🎤</button>
+            <input class="chat-input" id="input-aria" placeholder="Message Aria…" onkeydown="if(event.key==='Enter')sendMessage('aria')">
+            <button class="chat-send" onclick="sendMessage('aria')">➤</button>
+          </div>
+        </div>
+
+        <!-- Caree Panel -->
+        <div id="chat-panel-caree" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+          <div class="chat-intro caree-intro">
+            <div class="chat-intro-header">
+              <span class="chat-intro-icon">💬</span>
+              <div>
+                <div class="chat-intro-name" style="color:var(--green)">Caree</div>
+                <div class="chat-intro-status">Online — Care Assistant</div>
+              </div>
+            </div>
+            <div class="chat-intro-text">Hi Maria! 👋 Ask me about patient care protocols, medications, or real-time guidance during visits.</div>
+          </div>
+          <div class="quick-questions">
+            <div class="qq-label">Quick Questions</div>
+            <div class="qq-pills">
+              <span class="qq-pill" onclick="quickSend('caree','Fall risk protocols')">Fall risk protocols</span>
+              <span class="qq-pill" onclick="quickSend('caree','BP readings guide')">BP readings guide</span>
+              <span class="qq-pill" onclick="quickSend('caree','Dehydration signs')">Dehydration signs</span>
+              <span class="qq-pill" onclick="quickSend('caree','Medication checklist')">Medication checklist</span>
+            </div>
+          </div>
+          <div class="chat-messages" id="msgs-caree"></div>
+          <div class="chat-input-bar">
+            <button class="chat-voice" onclick="showScreen('voice')">🎤</button>
+            <input class="chat-input" id="input-caree" placeholder="Ask Caree about care…" onkeydown="if(event.key==='Enter')sendMessage('caree')">
+            <button class="chat-send" onclick="sendMessage('caree')">➤</button>
+          </div>
+        </div>
+
+        <!-- Knowledge Panel -->
+        <div id="chat-panel-knowledge" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+          <div class="chat-intro knowledge-intro">
+            <div class="chat-intro-header">
+              <span class="chat-intro-icon">🧠</span>
+              <div>
+                <div class="chat-intro-name" style="color:var(--amber)">Agency Knowledge Copilot</div>
+                <div class="chat-intro-status">Online — Policy Expert</div>
+              </div>
+            </div>
+            <div class="chat-intro-text">Hello! 👋 Ask me about policies, EVV requirements, scheduling rules, or training materials.</div>
+          </div>
+          <div class="quick-questions">
+            <div class="qq-label">Common Topics</div>
+            <div class="qq-pills">
+              <span class="qq-pill" onclick="quickSend('knowledge','EVV Requirements')">EVV Requirements</span>
+              <span class="qq-pill" onclick="quickSend('knowledge','Missed Visit Policy')">Missed Visit Policy</span>
+              <span class="qq-pill" onclick="quickSend('knowledge','OT & Scheduling')">OT & Scheduling</span>
+              <span class="qq-pill" onclick="quickSend('knowledge','PTO & Benefits')">PTO & Benefits</span>
+            </div>
+          </div>
+          <div class="chat-messages" id="msgs-knowledge"></div>
+          <div class="chat-input-bar">
+            <button class="chat-voice" onclick="showScreen('voice')">🎤</button>
+            <input class="chat-input" id="input-knowledge" placeholder="Ask about agency policy…" onkeydown="if(event.key==='Enter')sendMessage('knowledge')">
+            <button class="chat-send" onclick="sendMessage('knowledge')">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCHEDULE ═══ -->
+      <div class="screen" id="screen-schedule">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 4px;flex-shrink:0">
+          <div class="screen-title">My Schedule</div>
+          <div style="display:flex;gap:8px">
+            <span style="font-size:20px;cursor:pointer">📋</span>
+            <span style="font-size:20px;cursor:pointer" onclick="openModal('modal-booking')">⭐ Book</span>
+          </div>
+        </div>
+        <div class="week-strip">
+          <div class="day-pill"><span class="day-name">MON</span><span class="day-num">7</span></div>
+          <div class="day-pill"><span class="day-name">TUE</span><span class="day-num">8</span></div>
+          <div class="day-pill active"><span class="day-name">WED</span><span class="day-num">9</span></div>
+          <div class="day-pill"><span class="day-name">THU</span><span class="day-num">10</span></div>
+          <div class="day-pill"><span class="day-name">FRI</span><span class="day-num">11</span></div>
+          <div class="day-pill"><span class="day-name">SAT</span><span class="day-num">12</span></div>
+          <div class="day-pill"><span class="day-name">SUN</span><span class="day-num">13</span></div>
+        </div>
+
+        <div class="sched-date-header">Wednesday, Apr 9 <span class="ai-badge">✨ AI Optimized</span></div>
+
+        <div class="sched-shift" onclick="showScreen('visit')">
+          <div class="sched-shift-header">
+            <div class="sched-shift-name">Mrs. Eleanor Johnson</div>
+            <div class="sched-shift-time">🕚 10:00 AM – 2:00 PM (4 hrs)</div>
+            <div class="sched-shift-loc">📍 123 Ocean Ave, Brooklyn</div>
+          </div>
+          <div class="sched-shift-status">
+            <div class="sched-shift-status-text"><span class="tag tag-green" style="margin-right:6px">Active</span>✓ Checked in — 9:58 AM · EVV confirmed</div>
+            <div class="sched-shift-actions">
+              <button class="sched-btn sched-btn-ghost" onclick="event.stopPropagation();showScreen('visit')">View Visit</button>
+              <button class="sched-btn sched-btn-primary" onclick="event.stopPropagation();openModal('modal-doc')">✍ Note</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sched-shift" onclick="showScreen('visit')">
+          <div class="sched-shift-header">
+            <div class="sched-shift-name">Mr. Robert Chen</div>
+            <div class="sched-shift-time">🕐 3:00 PM – 7:00 PM (4 hrs)</div>
+            <div class="sched-shift-loc">📍 456 Main St, Brooklyn</div>
+          </div>
+          <div class="sched-shift-status">
+            <div class="sched-shift-status-text"><span class="tag tag-blue" style="margin-right:6px">Upcoming</span>⚠️ AI Alert: Fall risk — review notes before arrival</div>
+            <div class="sched-shift-actions">
+              <button class="sched-btn sched-btn-ghost" onclick="event.stopPropagation();showScreen('visit')">View Visit</button>
+              <button class="sched-btn sched-btn-ghost" onclick="event.stopPropagation();showScreen('chat');switchChatTab('aria')">Ask Aria</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-booking-btn" onclick="openModal('modal-booking')">
+          <div class="aib-left">
+            <div class="aib-icon">🔍</div>
+            <div>
+              <div class="aib-title">AI Shift Booking Agent</div>
+              <div class="aib-sub">Find open shifts matched to your skills, location & availability</div>
+            </div>
+          </div>
+          <span style="font-size:20px;color:var(--blue)">✨</span>
+        </div>
+      </div>
+
+      <!-- ═══ VISIT DETAIL ═══ -->
+      <div class="screen" id="screen-visit">
+        <div class="visit-header">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span class="back-btn" style="color:white;opacity:0.7" onclick="showScreen('schedule');updateBottomNav('schedule')">‹</span>
+            <span style="font-size:16px;font-weight:700;color:white">Mrs. Johnson — Visit</span>
+            <span style="margin-left:auto;font-size:14px;color:rgba(255,255,255,0.7);cursor:pointer" onclick="openModal('modal-translate')">🌐</span>
+          </div>
+          <div class="visit-client">
+            <div class="client-avatar">👩</div>
+            <div>
+              <div class="client-name">Mrs. Eleanor Johnson</div>
+              <div class="client-meta">DOB: 04/12/1942 · Age 82 · Female</div>
+            </div>
+          </div>
+          <div class="condition-tags">
+            <span class="cond-tag">HTN</span>
+            <span class="cond-tag">Arthritis</span>
+            <span class="cond-tag">Dementia (early)</span>
+          </div>
+        </div>
+
+        <div class="checkin-card">
+          <div class="checkin-icon">✅</div>
+          <div>
+            <div class="checkin-text">✓ Checked In — 9:58 AM</div>
+            <div class="checkin-sub">EVV GPS confirmed · 123 Ocean Ave, Brooklyn</div>
+          </div>
+        </div>
+
+        <div class="ai-brief-card" onclick="openModal('modal-brief')">
+          <div class="ai-brief-header">
+            <div class="ai-brief-title">✨ AI Shift Brief</div>
+            <div class="ai-brief-meta">Updated 30 min ago ›</div>
+          </div>
+          <div class="ai-brief-text">💧 Hydration: Low intake yesterday.
+🏋 PT: Left knee routine due.
+💊 Meds: Lisinopril 10mg at 10am.
+😊 Mood: Elevated — granddaughter visiting Saturday.</div>
+        </div>
+
+        <div class="tasks-card">
+          <div class="tasks-header">
+            <div class="tasks-title">📋 Care Tasks</div>
+            <div class="tasks-progress">4 of 6 done</div>
+          </div>
+          <div class="task-item">
+            <div class="task-check done">✓</div>
+            <div class="task-name done">Morning vitals (BP, HR, temp)</div>
+            <div class="task-time">9:59 AM</div>
+          </div>
+          <div class="task-item">
+            <div class="task-check done">✓</div>
+            <div class="task-name done">Breakfast prep & assistance</div>
+            <div class="task-time">10:22 AM</div>
+          </div>
+          <div class="task-item">
+            <div class="task-check pending"></div>
+            <div class="task-name">Administer 10am medications</div>
+            <div class="task-due">Due now</div>
+          </div>
+          <div class="task-item">
+            <div class="task-check pending"></div>
+            <div class="task-name">PT exercises (knee routine)</div>
+            <div class="task-time">15 min</div>
+          </div>
+          <div class="task-item">
+            <div class="task-check done">✓</div>
+            <div class="task-name done">Light housekeeping</div>
+            <div class="task-time">Done</div>
+          </div>
+          <div class="task-item">
+            <div class="task-check done">✓</div>
+            <div class="task-name done">Lunch preparation</div>
+            <div class="task-time">Done</div>
+          </div>
+        </div>
+
+        <div class="action-btns pb-safe">
+          <button class="action-btn action-btn-primary" onclick="openModal('modal-doc')">✍️ AI Documentation</button>
+          <button class="action-btn action-btn-ghost" onclick="openModal('modal-translate')">🌐</button>
+          <button class="action-btn action-btn-warning" onclick="openModal('modal-missed')">⚠️</button>
+        </div>
+      </div>
+
+      <!-- ═══ VOICE ═══ -->
+      <div class="screen" id="screen-voice">
+        <div class="voice-header" style="flex-shrink:0">
+          <span class="voice-back" onclick="showScreen('home');updateBottomNav('home')">‹</span>
+          <span class="voice-title">Voice-First Mode</span>
+          <span class="voice-status">🟢 Active</span>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);text-align:center;font-weight:600;letter-spacing:1px;flex-shrink:0">ARIA IS LISTENING</div>
+        <div class="voice-orb-container" style="flex-shrink:0">
+          <div class="voice-orb">🎤</div>
+        </div>
+        <div class="voice-hint" style="flex-shrink:0">Say something or tap a command below…</div>
+        <div class="voice-commands" style="flex-shrink:0">
+          <div class="voice-cmd-label">Quick commands</div>
+          <div class="voice-cmd-grid">
+            <button class="voice-cmd-pill" onclick="voiceCommand('Check in')">Check in</button>
+            <button class="voice-cmd-pill" onclick="voiceCommand('Shift brief')">Shift brief</button>
+            <button class="voice-cmd-pill" onclick="voiceCommand('Patient status')">Patient status</button>
+            <button class="voice-cmd-pill" onclick="voiceCommand('Log vitals')">Log vitals</button>
+            <button class="voice-cmd-pill" onclick="voiceCommand('Pending tasks')">Pending tasks</button>
+            <button class="voice-cmd-pill" onclick="voiceCommand('Write note')">Write note</button>
+          </div>
+        </div>
+        <div class="voice-response" id="voice-response" style="display:none;flex-shrink:0">
+          <div class="voice-response-label">Aria responded:</div>
+          <div class="voice-response-text" id="voice-response-text"></div>
+        </div>
+      </div>
+
+      <!-- ═══ COMMUNITY ═══ -->
+      <div class="screen" id="screen-community">
+        <div style="padding:14px 20px 4px;font-size:18px;font-weight:800;color:var(--gray-900);flex-shrink:0">Community 🎉</div>
+
+        <div class="community-banner">
+          <div class="comm-banner-left">
+            <div class="rank">🏆 You're a Top Performer ⭐</div>
+            <div class="rank-sub">Ranked #3 in Brooklyn — 98% on-time, 4.9 rating</div>
+            <button class="comm-view-btn" onclick="openModal('modal-achievements')">View My Achievements</button>
+          </div>
+          <div class="comm-banner-right">🥇</div>
+        </div>
+
+        <div class="feed-header">
+          <div class="feed-title">💬 Community Feed</div>
+          <div class="feed-new">12 new</div>
+        </div>
+
+        <div class="feed-post">
+          <div class="feed-post-header">
+            <div class="feed-avatar" style="background:#7c3aed">S</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div class="feed-author">Sarah M.</div>
+                <span class="top-badge">⭐ Top CG</span>
+              </div>
+              <div class="feed-meta">2 hours ago · Brooklyn</div>
+            </div>
+          </div>
+          <div class="feed-text">Just completed my 500th visit! 🎉 So grateful for this community and the AI tools that help me provide better care. The Shift Brief feature has been a game-changer 💙</div>
+          <div class="feed-actions">
+            <span class="feed-action">❤️ 24</span>
+            <span class="feed-action">💬 8</span>
+            <span class="feed-action">📤 Share</span>
+          </div>
+        </div>
+
+        <div class="feed-post">
+          <div class="feed-post-header">
+            <div class="feed-avatar" style="background:#059669">J</div>
+            <div style="flex:1">
+              <div class="feed-author">James K.</div>
+              <div class="feed-meta">5 hours ago</div>
+            </div>
+          </div>
+          <div class="feed-text">Pro tip: Voice Mode is amazing for hands-free documentation during bathing assistance. Saves 20 min per visit! 🔥</div>
+          <div class="feed-actions">
+            <span class="feed-action">❤️ 41</span>
+            <span class="feed-action">💬 15</span>
+            <span class="feed-action">📤 Share</span>
+          </div>
+        </div>
+
+        <div class="feed-post" style="margin-bottom:24px">
+          <div class="feed-post-header">
+            <div class="feed-avatar" style="background:var(--blue)">A</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div class="feed-author">Agency Admin</div>
+                <span class="official-badge">Official</span>
+              </div>
+              <div class="feed-meta">1 day ago</div>
+            </div>
+          </div>
+          <div class="feed-text">📢 New: AI Translation now supports Haitian Creole and Bengali! 🎉 Over 40 languages available.</div>
+          <div class="feed-actions">
+            <span class="feed-action">❤️ 89</span>
+            <span class="feed-action">💬 12</span>
+            <span class="feed-action">📤 Share</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PROFILE ═══ -->
+      <div class="screen" id="screen-profile">
+        <div class="profile-header">
+          <div class="profile-avatar">👩</div>
+          <div class="profile-name">Maria Garcia</div>
+          <div class="profile-sub">HHA Caregiver · ID: CG-10042 · 4.9 ⭐</div>
+          <div class="profile-badges">
+            <span class="profile-badge">✓ Active</span>
+            <span class="profile-badge">🏆 Top Performer</span>
+            <span class="profile-badge">5 Years</span>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-cell">
+            <div class="stat-val">98%</div>
+            <div class="stat-label">On-Time</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-val">4.9</div>
+            <div class="stat-label">Avg Rating</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-val">127</div>
+            <div class="stat-label">Visits/Mo</div>
+          </div>
+        </div>
+
+        <div style="padding:12px 20px 8px;font-size:14px;font-weight:700;color:var(--gray-800)">📊 Insight Bridge <span class="ai-badge">✨ AI</span></div>
+        <div class="insight-card">
+          <div class="insight-item">
+            <div class="insight-icon">📈</div>
+            <div class="insight-text"><strong>Strong month:</strong> On-time rate 6% above district avg. Documentation quality up 18% since using AI Doc Copilot.</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-icon">🎯</div>
+            <div class="insight-text"><strong>Growth area:</strong> 2 visits flagged for missing mood observations. Try Voice Mode for hands-free notes.</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-icon">💡</div>
+            <div class="insight-text"><strong>AI Recommendation:</strong> Adding 2 Thursday morning shifts could add ~$280/week based on your schedule pattern.</div>
+          </div>
+        </div>
+
+        <div class="achievements-card">
+          <div class="ach-header" onclick="openModal('modal-achievements')">
+            <div class="ach-title">🏆 Recognition Engine</div>
+            <span style="color:var(--blue);font-size:13px;font-weight:600">View All ›</span>
+          </div>
+          <div class="ach-grid">
+            <div class="ach-badge"><span class="ach-badge-icon">🥇</span><span class="ach-badge-name">Gold Status</span></div>
+            <div class="ach-badge"><span class="ach-badge-icon">🌟</span><span class="ach-badge-name">500 Visits</span></div>
+            <div class="ach-badge"><span class="ach-badge-icon">⏰</span><span class="ach-badge-name">Punctual Pro</span></div>
+            <div class="ach-badge"><span class="ach-badge-icon">🤖</span><span class="ach-badge-name">AI Pioneer</span></div>
+            <div class="ach-badge"><span class="ach-badge-icon">💧</span><span class="ach-badge-name">Care Champion</span></div>
+          </div>
+        </div>
+
+        <div style="padding:4px 20px 8px;font-size:14px;font-weight:700;color:var(--gray-800)">⚙️ Settings</div>
+        <div class="settings-list" style="margin-bottom:24px">
+          <div class="settings-item">
+            <div class="settings-item-left"><span class="settings-item-icon">🌐</span> Preferred Language</div>
+            <div class="settings-item-right">English ›</div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left"><span class="settings-item-icon">📅</span> Availability & Preferences</div>
+            <div class="settings-item-right">›</div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-left"><span class="settings-item-icon">🔔</span> Notification Settings</div>
+            <div class="settings-item-right">›</div>
+          </div>
+          <div class="settings-item danger" onclick="showScreen('login')">
+            <div class="settings-item-left"><span class="settings-item-icon">🚪</span> Sign Out</div>
+            <div class="settings-item-right">›</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end screen-container -->
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+      <div class="bottom-nav-item active" id="nav-home" onclick="showScreen('home');updateBottomNav('home')">
+        <span class="bni">🏠</span>Home
+      </div>
+      <div class="bottom-nav-item" id="nav-schedule" onclick="showScreen('schedule');updateBottomNav('schedule')">
+        <span class="bni">📅</span>Schedule
+      </div>
+      <div class="bottom-nav-item" id="nav-chat" onclick="showScreen('chat');updateBottomNav('chat')">
+        <span class="bni">🤖</span>AI Chat
+      </div>
+      <div class="bottom-nav-item" id="nav-community" onclick="showScreen('community');updateBottomNav('community')">
+        <span class="bni">🤝</span>Community
+      </div>
+      <div class="bottom-nav-item" id="nav-profile" onclick="showScreen('profile');updateBottomNav('profile')">
+        <span class="bni">👤</span>Profile
+      </div>
+    </div>
+
+    <!-- ════════ MODALS ════════ -->
+
+    <!-- AI BRIEF MODAL -->
+    <div class="modal-overlay" id="modal-brief" onclick="closeModalOnOverlay(event,'modal-brief')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">✨ AI Shift Brief</div>
+          <span class="modal-close" onclick="closeModal('modal-brief')">×</span>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px">Generated 8:42 AM · Mrs. Eleanor Johnson</div>
+          <div class="ai-modal-summary">
+            <div class="ai-modal-summary-label">🧠 AI SUMMARY</div>
+            <div class="ai-modal-summary-text">Mrs. Johnson had a good night. BP stable at 126/80. She mentioned feeling stiff this morning — PT will be especially beneficial. Granddaughter visit Saturday has noticeably improved her mood.</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:10px">Key Priorities</div>
+          <div class="priority-item"><span style="font-size:18px">💊</span><div class="priority-text"><strong>Medications:</strong> Lisinopril 10mg + Atorvastatin at 10am. Check blister pack is current.</div></div>
+          <div class="priority-item"><span style="font-size:18px">🏋</span><div class="priority-text"><strong>Exercise:</strong> Left knee PT — 3 sets of 10 leg lifts. Note pain level (1–10).</div></div>
+          <div class="priority-item"><span style="font-size:18px">💧</span><div class="priority-text"><strong>Hydration:</strong> Goal: 6 glasses. She prefers room-temp water with lemon.</div></div>
+          <div class="priority-item"><span style="font-size:18px">😊</span><div class="priority-text"><strong>Engagement:</strong> Ask about granddaughter Emma's soccer games — she lights up about it.</div></div>
+          <button class="modal-cta" onclick="closeModal('modal-brief')">Got It — Start Visit ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMART NUDGES MODAL -->
+    <div class="modal-overlay" id="modal-nudges" onclick="closeModalOnOverlay(event,'modal-nudges')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">🔔 Smart Nudges</div>
+          <span class="modal-close" onclick="closeModal('modal-nudges')">×</span>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px">AI-generated personalized guidance for today</div>
+          <div class="nudge-modal-item">
+            <div class="nudge-modal-header"><span class="nudge-modal-icon">💧</span><div class="nudge-modal-title">Hydration Alert</div></div>
+            <div class="nudge-modal-text">Mrs. Johnson only had 3 glasses yesterday. Offer water proactively every 45 minutes.</div>
+          </div>
+          <div class="nudge-modal-item">
+            <div class="nudge-modal-header"><span class="nudge-modal-icon">🧠</span><div class="nudge-modal-title">Memory Support</div></div>
+            <div class="nudge-modal-text">Early dementia stage — use simple, direct sentences. Visual cues and routines help greatly.</div>
+          </div>
+          <div class="nudge-modal-item">
+            <div class="nudge-modal-header"><span class="nudge-modal-icon">📝</span><div class="nudge-modal-title">Documentation Tip</div></div>
+            <div class="nudge-modal-text">Last 3 notes missed mood/behavior section. Today, note Mrs. Johnson's emotional state.</div>
+          </div>
+          <div class="nudge-modal-item">
+            <div class="nudge-modal-header"><span class="nudge-modal-icon">🎯</span><div class="nudge-modal-title">Safety Check</div></div>
+            <div class="nudge-modal-text">Verify bathroom grab bars are secure. Last safety audit was 3 months ago.</div>
+          </div>
+          <button class="modal-cta" onclick="closeModal('modal-nudges')">Acknowledge All ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSLATION MODAL -->
+    <div class="modal-overlay" id="modal-translate" onclick="closeModalOnOverlay(event,'modal-translate')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">🌐 AI Translation</div>
+          <span class="modal-close" onclick="closeModal('modal-translate')">×</span>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Tap a language to translate care instructions for your client</div>
+          <div class="lang-grid">
+            <button class="lang-btn active" onclick="selectLang(this,'spanish')">🇪🇸 Spanish</button>
+            <button class="lang-btn" onclick="selectLang(this,'chinese')">🇨🇳 Chinese</button>
+            <button class="lang-btn" onclick="selectLang(this,'russian')">🇷🇺 Russian</button>
+            <button class="lang-btn" onclick="selectLang(this,'haitian')">🇭🇹 Haitian Cr.</button>
+            <button class="lang-btn" onclick="selectLang(this,'bengali')">🇧🇩 Bengali</button>
+            <button class="lang-btn" onclick="selectLang(this,'arabic')">🇸🇦 Arabic</button>
+            <button class="lang-btn" onclick="selectLang(this,'french')">🇫🇷 French</button>
+            <button class="lang-btn" onclick="selectLang(this,'portuguese')">🇵🇹 Portuguese</button>
+          </div>
+          <div class="translation-result">
+            <div class="translation-label">TRANSLATED TO SPANISH</div>
+            <div class="translation-text" id="translation-output">Buenos días. Voy a ayudarle con sus medicamentos ahora. ¿Cómo se siente hoy? Recuerde beber suficiente agua — al menos 6 vasos. Su nieta viene a visitarle el sábado. 😊</div>
+            <button class="read-aloud-btn">🔊 Read Aloud to Client</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI DOCUMENTATION MODAL -->
+    <div class="modal-overlay" id="modal-doc" onclick="closeModalOnOverlay(event,'modal-doc')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">✍️ AI Documentation</div>
+          <span class="modal-close" onclick="closeModal('modal-doc')">×</span>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:4px">Doc Copilot — Auto-fills from visit data</div>
+          <div class="generating-text"><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div> Generating visit note from completed tasks & vitals…</div>
+          <div class="doc-note">Visit Note — Mrs. Eleanor Johnson
+Date: 04/09/2025 | Time: 10:00–14:00
+Caregiver: Maria Garcia (CG-10042)
+
+ADLs: Assisted with morning hygiene and breakfast prep (oatmeal w/ blueberries per preference). Ambulated independently to dining area.
+
+Medications: Lisinopril 10mg administered at 10:02am per MAR. Client cooperative.
+
+PT Exercises: Left knee routine completed — 3 sets of 10. Client reported mild discomfort (3/10). No swelling.
+
+Vitals: BP 128/82, HR 74, Temp 98.4°F. All within normal limits.
+
+Mood/Behavior: Client in elevated spirits. Discussed granddaughter visit Saturday. Excellent engagement throughout.
+
+Concerns: Fluid intake encouraged — offered lemon water per preference. Total approx. 4 glasses.</div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-primary" onclick="closeModal('modal-doc')">Submit Note ✓</button>
+            <button class="doc-btn doc-btn-ghost" onclick="closeModal('modal-doc')">Edit & Review</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MISSED VISIT MODAL -->
+    <div class="modal-overlay" id="modal-missed" onclick="closeModalOnOverlay(event,'modal-missed')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">⚠️ Missed Visit Recovery</div>
+          <span class="modal-close" onclick="closeModal('modal-missed')">×</span>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px">AI Evidence Collection — Auto-gathered</div>
+          <div class="evidence-item">
+            <div class="evidence-icon">📍</div>
+            <div style="flex:1">
+              <div class="evidence-label">GPS EVIDENCE</div>
+              <div class="evidence-detail">Location verified at 123 Ocean Ave at 9:55 AM — within 50ft of client address.</div>
+            </div>
+            <div class="evidence-check">✓</div>
+          </div>
+          <div class="evidence-item">
+            <div class="evidence-icon">📲</div>
+            <div style="flex:1">
+              <div class="evidence-label">EVV RECORD</div>
+              <div class="evidence-detail">Check-in call logged at 10:01 AM. EVV system confirmation pending review.</div>
+            </div>
+          </div>
+          <div class="evidence-item">
+            <div class="evidence-icon">📸</div>
+            <div style="flex:1">
+              <div class="evidence-label">PHOTO TIMESTAMPS</div>
+              <div class="evidence-detail">3 photos taken during visit (meds, PT, lunch). Metadata confirms location & time.</div>
+            </div>
+            <div class="evidence-check">✓</div>
+          </div>
+          <div class="ai-assessment">
+            <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ AI Assessment: Strong evidence package</div>
+            <div class="ai-assessment-text">This visit can be verified. Ready to submit to agency for review.</div>
+          </div>
+          <button class="modal-cta" onclick="closeModal('modal-missed')">Submit Evidence to Agency</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS MODAL -->
+    <div class="modal-overlay" id="modal-achievements" onclick="closeModalOnOverlay(event,'modal-achievements')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">🏆 My Achievements</div>
+          <span class="modal-close" onclick="closeModal('modal-achievements')">×</span>
+        </div>
+        <div class="modal-body">
+          <div class="ach-modal-grid">
+            <div class="ach-modal-item">
+              <div class="ach-modal-icon">🥇</div>
+              <div class="ach-modal-name">Gold Caregiver</div>
+              <div class="ach-modal-desc">Top 5% NY State · April 2025</div>
+            </div>
+            <div class="ach-modal-item">
+              <div class="ach-modal-icon">🌟</div>
+              <div class="ach-modal-name">500 Visits</div>
+              <div class="ach-modal-desc">Milestone Badge</div>
+            </div>
+            <div class="ach-modal-item">
+              <div class="ach-modal-icon">⏰</div>
+              <div class="ach-modal-name">Punctual Pro</div>
+              <div class="ach-modal-desc">98% on-time, 3 months</div>
+            </div>
+            <div class="ach-modal-item">
+              <div class="ach-modal-icon">🤖</div>
+              <div class="ach-modal-name">AI Pioneer</div>
+              <div class="ach-modal-desc">Used all AI features</div>
+            </div>
+            <div class="ach-modal-item">
+              <div class="ach-modal-icon">💧</div>
+              <div class="ach-modal-name">Care Champion</div>
+              <div class="ach-modal-desc">Exceptional care score</div>
+            </div>
+          </div>
+          <button class="modal-cta" style="background:linear-gradient(135deg,#f59e0b,#d97706)" onclick="closeModal('modal-achievements')">🎉 Share Achievement</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI SHIFT BOOKING MODAL -->
+    <div class="modal-overlay" id="modal-booking" onclick="closeModalOnOverlay(event,'modal-booking')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">⭐ AI Shift Booking</div>
+          <span class="modal-close" onclick="closeModal('modal-booking')">×</span>
+        </div>
+        <div class="modal-body">
+          <div class="generating-text"><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div> Analyzing skills, location, availability, ratings…</div>
+          <div style="font-size:14px;font-weight:700;color:var(--gray-700);margin-bottom:12px">3 Matches — Sorted by AI Score</div>
+          <div class="shift-match">
+            <div class="shift-match-header">
+              <div class="shift-match-name">Mrs. Patricia Lee</div>
+              <div class="shift-match-score">98% match</div>
+            </div>
+            <div class="shift-match-details">Thu Apr 10 · 9am–1pm · 0.8mi</div>
+            <div class="shift-match-reason">✨ You've cared for similar patients. Familiar routine. Easy commute.</div>
+            <button class="shift-accept-btn" onclick="closeModal('modal-booking')">Accept This Shift</button>
+          </div>
+          <div class="shift-match">
+            <div class="shift-match-header">
+              <div class="shift-match-name">Mr. David Kim</div>
+              <div class="shift-match-score">91% match</div>
+            </div>
+            <div class="shift-match-details">Fri Apr 11 · 2pm–6pm · 1.2mi</div>
+            <div class="shift-match-reason">✨ Korean-speaking client — your AI Translation skill is a perfect fit.</div>
+            <button class="shift-accept-btn" onclick="closeModal('modal-booking')">Accept This Shift</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW TIMESHEET MODAL -->
+    <div class="modal-overlay" id="modal-new-ts" onclick="closeModalOnOverlay(event,'modal-new-ts')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">📋 New Timesheet</div>
+          <span class="modal-close" onclick="closeModal('modal-new-ts')">×</span>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Record a missed or incorrect clock in/out</div>
+          <div class="ts-form-group">
+            <div class="ts-label">Visit Date</div>
+            <input class="ts-input" type="date" value="2025-04-07">
+          </div>
+          <div class="ts-form-group">
+            <div class="ts-label">Client</div>
+            <select class="ts-select">
+              <option>Mrs. Eleanor Johnson</option>
+              <option>Mr. Robert Chen</option>
+            </select>
+          </div>
+          <div class="ts-row">
+            <div class="ts-form-group">
+              <div class="ts-label">Clock In</div>
+              <input class="ts-input" type="time" value="10:00">
+            </div>
+            <div class="ts-form-group">
+              <div class="ts-label">Clock Out</div>
+              <input class="ts-input" type="time" value="14:00">
+            </div>
+          </div>
+          <div class="ts-form-group">
+            <div class="ts-label">Reason</div>
+            <select class="ts-select">
+              <option>Forgot to clock in</option>
+              <option>Forgot to clock out</option>
+              <option>Phone battery died</option>
+              <option>App was not working</option>
+              <option>No phone signal at location</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="ts-form-group">
+            <div class="ts-label">Notes (optional)</div>
+            <input class="ts-input" type="text" placeholder="Additional details…">
+          </div>
+          <button class="modal-cta" onclick="closeModal('modal-new-ts')">Submit for Agency Review ›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENCY TIMESHEET REQUEST MODAL -->
+    <div class="modal-overlay" id="modal-agency-ts" onclick="closeModalOnOverlay(event,'modal-agency-ts')">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">📋 Timesheet Request</div>
+          <span class="modal-close" onclick="closeModal('modal-agency-ts')">×</span>
+        </div>
+        <div class="modal-body">
+          <div class="agency-card">
+            <div style="font-size:18px;margin-bottom:6px">🏢</div>
+            <div class="agency-name">Sunshine Home Care Agency</div>
+            <div class="agency-sub">Action Required</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray-600);margin-bottom:12px">Your agency needs you to confirm your times for Monday's visit. Please review and sign below.</div>
+          <div class="ts-comparison">
+            <div class="ts-comp-cell"><div class="ts-comp-label">Date</div><div class="ts-comp-val" style="font-size:14px">Mon, Apr 7</div></div>
+            <div class="ts-comp-cell"><div class="ts-comp-label">Client</div><div class="ts-comp-val" style="font-size:14px">Mrs. Johnson</div></div>
+            <div class="ts-comp-cell"><div class="ts-comp-label">Sched. In</div><div class="ts-comp-val">10:00 AM</div></div>
+            <div class="ts-comp-cell"><div class="ts-comp-label">Sched. Out</div><div class="ts-comp-val">2:00 PM</div></div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px">✍️ Your Actual Times</div>
+          <div class="ts-row">
+            <div class="ts-form-group">
+              <div class="ts-label">Actual Clock In</div>
+              <input class="ts-input" type="time" value="10:01">
+            </div>
+            <div class="ts-form-group">
+              <div class="ts-label">Actual Clock Out</div>
+              <input class="ts-input" type="time" value="14:02">
+            </div>
+          </div>
+          <div class="ts-form-group">
+            <div class="ts-label">Reason (optional)</div>
+            <select class="ts-select">
+              <option>Times are accurate, no discrepancy</option>
+              <option>Arrived slightly late (traffic)</option>
+              <option>Forgot to clock in on app</option>
+              <option>Stayed late at client request</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="ts-form-group">
+            <div class="ts-label">✍️ Electronic Signature</div>
+            <div class="signature-pad signed" id="sig-pad" onclick="signTimesheet()">
+              ✓ Signed — Maria Garcia<br>
+              <span style="font-size:11px">CG-10042 · Apr 9, 2025 · 9:41 AM</span>
+            </div>
+          </div>
+          <button class="modal-cta" onclick="closeModal('modal-agency-ts')">Submit Timesheet ✓</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end phone -->
+</main>
+
+<script>
+// ─── SCREEN & NAV ───
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const s = document.getElementById('screen-' + name);
+  if (s) s.classList.add('active');
+}
+
+function updateBottomNav(name) {
+  document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.remove('active'));
+  const n = document.getElementById('nav-' + name);
+  if (n) n.classList.add('active');
+}
+
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── MODALS ───
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeModalOnOverlay(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// ─── CHAT TABS ───
+let currentTab = 'aria';
+function switchChatTab(tab) {
+  currentTab = tab;
+  ['aria','caree','knowledge'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    const panel = document.getElementById('chat-panel-'+t);
+    panel.style.display = t===tab ? 'flex' : 'none';
+  });
+}
+
+// ─── AI CHAT (real Anthropic API) ───
+const chatHistory = { aria: [], caree: [], knowledge: [] };
+
+const systemPrompts = {
+  aria: `You are Aria, a warm and encouraging AI companion for Maria Garcia, a home health aide (HHA) caregiver in Brooklyn, NY. You know Maria's schedule: Mrs. Eleanor Johnson (10am-2pm) with BP issues, early dementia, PT needed for left knee; Mr. Robert Chen (3pm-7pm) with fall risk. You are supportive, brief, and practical. Use emojis occasionally. Keep responses under 3 sentences unless asked for more detail.`,
+  caree: `You are Caree, a professional clinical AI assistant for home health aide caregivers. Answer questions about patient care protocols, medication management, fall prevention, vital signs, dementia care, and clinical best practices. Be concise, clear, and evidence-based. Use bullet points when listing steps. Keep responses brief and actionable.`,
+  knowledge: `You are an Agency Knowledge Copilot for Sunshine Home Care Agency. Answer questions about agency policies, EVV (Electronic Visit Verification) requirements, scheduling rules, overtime policies, missed visit procedures, PTO, benefits, and compliance. Be clear, authoritative, and reference specific policy details. Keep responses concise.`
+};
+
+async function sendMessage(panel) {
+  const input = document.getElementById('input-' + panel);
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addMsg(panel, text, 'user');
+  const thinkingId = addThinking(panel);
+  chatHistory[panel].push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompts[panel],
+        messages: chatHistory[panel]
+      })
+    });
+    const data = await res.json();
+    removeThinking(panel, thinkingId);
+    const reply = data.content?.[0]?.text || 'Sorry, I could not respond right now.';
+    chatHistory[panel].push({ role: 'assistant', content: reply });
+    addMsg(panel, reply, 'ai');
+  } catch(e) {
+    removeThinking(panel, thinkingId);
+    addMsg(panel, 'Connection error. Please try again.', 'ai');
+  }
+}
+
+function quickSend(panel, text) {
+  const input = document.getElementById('input-' + panel);
+  input.value = text;
+  sendMessage(panel);
+}
+
+function addMsg(panel, text, role) {
+  const container = document.getElementById('msgs-' + panel);
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : '');
+  const avatarIcon = panel === 'aria' ? '🤖' : panel === 'caree' ? '💬' : '🧠';
+  div.innerHTML = role === 'ai'
+    ? `<div class="msg-avatar">${avatarIcon}</div><div class="msg-bubble ai">${text.replace(/\n/g,'<br>')}</div>`
+    : `<div class="msg-bubble user">${text}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+let thinkingCounter = 0;
+function addThinking(panel) {
+  const id = 'thinking-' + (++thinkingCounter);
+  const container = document.getElementById('msgs-' + panel);
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.id = id;
+  const avatarIcon = panel === 'aria' ? '🤖' : panel === 'caree' ? '💬' : '🧠';
+  div.innerHTML = `<div class="msg-avatar">${avatarIcon}</div><div class="msg-bubble ai thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return id;
+}
+
+function removeThinking(panel, id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ─── VOICE ───
+const voiceResponses = {
+  'Check in': 'Checking you in at Mrs. Johnson\'s location. EVV GPS confirmed — 9:58 AM. ✓ You\'re all set!',
+  'Shift brief': 'Mrs. Johnson: BP stable, PT due for left knee, meds at 10am. Mood elevated — granddaughter visiting Saturday! 🌟',
+  'Patient status': 'Mrs. Johnson is doing well. Vitals taken at 9:59 AM — BP 128/82, HR 74, all normal. She\'s in good spirits today.',
+  'Log vitals': 'Sure! Last logged: BP 128/82, HR 74, Temp 98.4°F at 9:59 AM. Say your new readings to update.',
+  'Pending tasks': 'You have 2 tasks remaining: Administer 10am medications (due now!) and PT exercises (15 min). You\'ve got this! 💪',
+  'Write note': 'Opening AI Documentation... Your visit note is being auto-generated from today\'s completed tasks and vitals.'
+};
+
+function voiceCommand(cmd) {
+  const resp = document.getElementById('voice-response');
+  const text = document.getElementById('voice-response-text');
+  resp.style.display = 'block';
+  text.textContent = voiceResponses[cmd] || 'Processing your command…';
+  if (cmd === 'Write note') setTimeout(() => openModal('modal-doc'), 1000);
+  if (cmd === 'Shift brief') setTimeout(() => openModal('modal-brief'), 1000);
+}
+
+// ─── TRANSLATION ───
+const translations = {
+  spanish: '🌟 Buenos días. Voy a ayudarle con sus medicamentos ahora. ¿Cómo se siente hoy? Recuerde beber suficiente agua.',
+  chinese: '🌟 早上好。我现在来帮您服药。您今天感觉怎么样？请记得多喝水。',
+  russian: '🌟 Доброе утро. Я помогу вам с лекарствами. Как вы себя чувствуете? Помните пить достаточно воды.',
+  haitian: '🌟 Bonjou. Mwen pral ede ou ak medikaman ou yo kounye a. Kijan ou santi ou jodi a?',
+  bengali: '🌟 সুপ্রভাত। আমি এখন আপনার ওষুধে সাহায্য করতে এসেছি। আজ আপনি কেমন অনুভব করছেন?',
+  arabic: '🌟 صباح الخير. سأساعدك في أدوية الآن. كيف حالك اليوم؟ تذكر شرب الماء الكافي.',
+  french: '🌟 Bonjour. Je vais vous aider avec vos médicaments maintenant. Comment vous sentez-vous aujourd\'hui?',
+  portuguese: '🌟 Bom dia. Vou ajudá-lo com seus medicamentos agora. Como você se sente hoje? Lembre-se de beber água.'
+};
+
+const langLabels = { spanish:'SPANISH', chinese:'CHINESE', russian:'RUSSIAN', haitian:'HAITIAN CREOLE', bengali:'BENGALI', arabic:'ARABIC', french:'FRENCH', portuguese:'PORTUGUESE' };
+
+function selectLang(btn, lang) {
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelector('.translation-label').textContent = 'TRANSLATED TO ' + langLabels[lang];
+  document.getElementById('translation-output').textContent = translations[lang];
+}
+
+// ─── TIMESHEET SIGN ───
+function signTimesheet() {
+  const pad = document.getElementById('sig-pad');
+  pad.classList.add('signed');
+  pad.innerHTML = '✓ Signed — Maria Garcia<br><span style="font-size:11px">CG-10042 · Apr 9, 2025 · 9:41 AM</span>';
+}
+</script>
+</body>
+</html>

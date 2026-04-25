@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HHAeXchange+ | NEMT Transport</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sky:#0ea5e9;--sky-dark:#0284c7;--sky-light:#e0f2fe;
+  --emerald:#10b981;--emerald-dark:#059669;--emerald-light:#d1fae5;
+  --violet:#7c3aed;--violet-light:#ede9fe;
+  --amber:#f59e0b;--amber-light:#fef3c7;
+  --red:#ef4444;--red-light:#fee2e2;
+  --slate-50:#f8fafc;--slate-100:#f1f5f9;--slate-200:#e2e8f0;
+  --slate-300:#cbd5e1;--slate-400:#94a3b8;--slate-500:#64748b;
+  --slate-600:#475569;--slate-700:#334155;--slate-800:#1e293b;--slate-900:#0f172a;
+  --transport-grad:linear-gradient(135deg,#0ea5e9 0%,#6366f1 100%);
+  --driver-grad:linear-gradient(135deg,#059669 0%,#0ea5e9 100%);
+  --shadow:0 4px 24px rgba(0,0,0,.10);--shadow-lg:0 8px 40px rgba(0,0,0,.18);
+  --r:14px;--r-sm:10px;
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--slate-900);min-height:100vh;display:flex;overflow:hidden}
+/* SIDEBAR */
+.sidebar{width:230px;min-width:230px;background:var(--slate-900);border-right:1px solid var(--slate-800);display:flex;flex-direction:column;padding:20px 0 12px;height:100vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--slate-800) transparent}
+.sb-logo{padding:0 18px 20px;border-bottom:1px solid var(--slate-800)}
+.sb-logo h1{font-size:16px;font-weight:800;color:white;letter-spacing:-.3px}
+.sb-logo h1 span{background:var(--transport-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-logo p{font-size:10px;color:var(--slate-500);margin-top:2px}
+.sb-link-back{display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:12px;color:var(--slate-400);cursor:pointer;border-bottom:1px solid var(--slate-800);margin-bottom:8px}
+.sb-link-back:hover{color:white}
+.sb-section{padding:14px 18px 6px;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--slate-600);text-transform:uppercase}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 18px;font-size:12px;font-weight:500;color:var(--slate-400);cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.sb-item:hover{color:white;background:var(--slate-800)}
+.sb-item.active{color:white;background:var(--slate-800);border-left-color:var(--sky)}
+.sb-item .icon{font-size:15px;width:18px;text-align:center}
+.sb-divider{border:none;border-top:1px solid var(--slate-800);margin:8px 0}
+.view-toggle{margin:12px 14px;display:flex;gap:4px;background:var(--slate-800);border-radius:10px;padding:4px}
+.vt-btn{flex:1;padding:7px 4px;border-radius:8px;font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .2s;color:var(--slate-400);background:transparent}
+.vt-btn.active{background:var(--sky);color:white}
+/* MAIN */
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--slate-900);overflow:hidden;position:relative}
+/* PHONE */
+.phone{width:390px;height:844px;background:white;border-radius:48px;box-shadow:0 0 0 10px var(--slate-800),0 0 0 12px var(--slate-900),var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0}
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 24px 4px;font-size:12px;font-weight:600;color:var(--slate-800);min-height:44px;flex-shrink:0;background:white;position:relative;z-index:10}
+.screen-wrap{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;flex-direction:column;scrollbar-width:none;background:var(--slate-50)}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{display:flex}
+.screen.map-screen{background:white;overflow:hidden}
+/* STATUS BAR OVERLAY FOR MAP SCREENS */
+.map-status-overlay{position:absolute;top:0;left:0;right:0;z-index:1000;background:transparent}
+/* HEADERS */
+.ph{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--slate-100);flex-shrink:0;background:white}
+.ph-back{font-size:22px;cursor:pointer;color:var(--slate-500);line-height:1}
+.ph-title{font-size:16px;font-weight:800;color:var(--slate-900)}
+.ph-sub{font-size:11px;color:var(--slate-400);font-weight:500}
+/* CARDS */
+.card{background:white;border-radius:var(--r);border:1px solid var(--slate-200);padding:16px;margin:0 14px 12px}
+/* GRADIENT CARDS */
+.card-sky{background:linear-gradient(135deg,#e0f2fe,#ede9fe);border:1px solid #bae6fd}
+.card-green{background:var(--emerald-light);border:1px solid #6ee7b7}
+/* BUTTONS */
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-sky{background:var(--transport-grad);color:white}
+.btn-green{background:var(--driver-grad);color:white}
+.btn-ghost{background:var(--slate-100);color:var(--slate-700);border:1px solid var(--slate-200)}
+.btn-red{background:var(--red-light);color:var(--red)}
+.btn-sm{padding:9px 16px;font-size:13px;border-radius:10px;width:auto}
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.tag-sky{background:var(--sky-light);color:var(--sky-dark)}
+.tag-green{background:var(--emerald-light);color:var(--emerald-dark)}
+.tag-amber{background:var(--amber-light);color:var(--amber)}
+.tag-red{background:var(--red-light);color:var(--red)}
+.tag-violet{background:var(--violet-light);color:var(--violet)}
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:700;color:var(--slate-500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block}
+.form-input,.form-select{width:100%;padding:12px 14px;border:1.5px solid var(--slate-200);border-radius:10px;font-size:14px;font-family:inherit;color:var(--slate-800);background:white;outline:none;transition:border-color .2s}
+.form-input:focus,.form-select:focus{border-color:var(--sky)}
+.form-input::placeholder{color:var(--slate-400)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* STEP INDICATOR */
+.step-bar{display:flex;align-items:center;padding:14px 18px;gap:0;flex-shrink:0;background:white;border-bottom:1px solid var(--slate-100)}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .3s}
+.step-dot.done{background:var(--emerald);color:white}
+.step-dot.active{background:var(--sky);color:white}
+.step-dot.pending{background:var(--slate-200);color:var(--slate-400)}
+.step-line{flex:1;height:2px;background:var(--slate-200);transition:background .3s}
+.step-line.done{background:var(--emerald)}
+
+/* ══════════ WELCOME ══════════ */
+#s-welcome{background:var(--slate-900);align-items:center;justify-content:center;padding:40px 28px}
+.wlc-logo{text-align:center;margin-bottom:40px}
+.wlc-icon{font-size:52px;margin-bottom:12px}
+.wlc-h{font-size:28px;font-weight:800;color:white;letter-spacing:-.5px}
+.wlc-h span{background:var(--transport-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.wlc-sub{font-size:13px;color:var(--slate-400);margin-top:6px}
+.role-card{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:18px;padding:24px 20px;cursor:pointer;transition:all .25s;width:100%;margin-bottom:12px;text-align:left}
+.role-card:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
+.role-card-header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.role-icon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.role-icon-member{background:linear-gradient(135deg,#0ea5e9,#6366f1)}
+.role-icon-driver{background:linear-gradient(135deg,#059669,#0ea5e9)}
+.role-name{font-size:18px;font-weight:800;color:white}
+.role-desc{font-size:12px;color:var(--slate-400);margin-top:2px}
+.role-arrow{margin-left:auto;font-size:20px;color:var(--slate-500)}
+.role-bullets{display:flex;flex-direction:column;gap:5px}
+.role-bullet{font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:6px}
+.role-bullet::before{content:'•';color:var(--sky)}
+
+/* ══════════ MEMBER LOGIN ══════════ */
+#s-m-login{background:var(--slate-900);padding:32px 24px;justify-content:center}
+.m-login-logo{text-align:center;margin-bottom:32px}
+.m-login-title{font-size:22px;font-weight:800;color:white}
+.m-login-sub{font-size:13px;color:var(--slate-400);margin-top:4px}
+.login-box{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:18px;padding:24px}
+.login-field{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:13px 14px;color:white;font-size:14px;font-family:inherit;outline:none;margin-bottom:12px;transition:border-color .2s}
+.login-field:focus{border-color:var(--sky)}
+.login-field::placeholder{color:var(--slate-500)}
+.login-btn{width:100%;padding:14px;background:var(--transport-grad);color:white;font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer;font-family:inherit;margin-top:4px;transition:opacity .2s}
+.login-btn:hover{opacity:.88}
+.login-demo{text-align:center;margin-top:16px;font-size:12px;color:var(--slate-500)}
+.login-demo span{color:var(--sky);cursor:pointer;font-weight:600}
+
+/* ══════════ MEMBER HOME ══════════ */
+.m-home-header{background:var(--transport-grad);padding:20px 18px 40px;color:white}
+.m-home-greeting{font-size:20px;font-weight:800;margin-bottom:2px}
+.m-home-id{font-size:12px;opacity:.75;margin-bottom:12px}
+.insurance-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600}
+.m-home-body{margin-top:-24px;border-radius:20px 20px 0 0;background:var(--slate-50);flex:1;padding:12px 0 0}
+.section-h{font-size:12px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.8px;padding:4px 18px 8px}
+.upcoming-card{margin:0 14px 12px;background:white;border-radius:var(--r);border:1px solid var(--slate-200);padding:15px}
+.uc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.uc-status{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.uc-date{font-size:14px;font-weight:700;color:var(--slate-800)}
+.uc-dest{font-size:12px;color:var(--slate-500);margin-top:2px;display:flex;align-items:center;gap:4px}
+.uc-driver{display:flex;align-items:center;gap:8px;background:var(--slate-50);border-radius:10px;padding:8px;margin-top:10px}
+.uc-driver-av{width:32px;height:32px;border-radius:50%;background:var(--transport-grad);display:flex;align-items:center;justify-content:center;font-size:16px;color:white;font-weight:700;flex-shrink:0}
+.uc-driver-name{font-size:13px;font-weight:600;color:var(--slate-700)}
+.uc-driver-vehicle{font-size:11px;color:var(--slate-400)}
+.quick-request-btn{margin:0 14px 16px;background:var(--transport-grad);border-radius:16px;padding:18px 20px;color:white;cursor:pointer;display:flex;align-items:center;gap:14px;border:none;font-family:inherit;width:calc(100%-28px);text-align:left;transition:opacity .2s}
+.quick-request-btn:hover{opacity:.9}
+.qrb-icon{font-size:32px}
+.qrb-text .t{font-size:15px;font-weight:800}
+.qrb-text .s{font-size:12px;opacity:.8}
+.history-item{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--slate-100);cursor:pointer}
+.history-item:last-child{border-bottom:none}
+.hi-icon{width:38px;height:38px;border-radius:12px;background:var(--sky-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hi-dest{font-size:13px;font-weight:600;color:var(--slate-800)}
+.hi-date{font-size:11px;color:var(--slate-400)}
+.hi-price{font-size:13px;font-weight:700;color:var(--slate-600);margin-left:auto}
+
+/* ══════════ RIDE REQUEST ══════════ */
+.req-step{display:none;flex-direction:column;flex:1;padding:16px 14px 0}
+.req-step.active{display:flex}
+.req-step-title{font-size:18px;font-weight:800;color:var(--slate-900);margin-bottom:4px}
+.req-step-sub{font-size:13px;color:var(--slate-400);margin-bottom:18px}
+.location-input-wrap{position:relative;margin-bottom:12px}
+.location-input{width:100%;padding:13px 14px 13px 42px;border:1.5px solid var(--slate-200);border-radius:12px;font-size:14px;font-family:inherit;color:var(--slate-800);outline:none;background:white;transition:border-color .2s}
+.location-input:focus{border-color:var(--sky)}
+.location-input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:18px}
+.gps-btn{display:flex;align-items:center;gap:8px;background:var(--sky-light);border:1.5px solid #7dd3fc;border-radius:12px;padding:12px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--sky-dark);margin-bottom:12px;border:none;font-family:inherit;width:100%;transition:all .2s}
+.gps-btn:hover{background:#bae6fd}
+.gps-btn.locked{background:var(--emerald-light);color:var(--emerald-dark);border:1.5px solid #6ee7b7}
+.ride-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ride-type-card{border:2px solid var(--slate-200);border-radius:12px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .2s;background:white}
+.ride-type-card.selected{border-color:var(--sky);background:var(--sky-light)}
+.ride-type-card .icon{font-size:28px;margin-bottom:6px}
+.ride-type-card .name{font-size:13px;font-weight:700;color:var(--slate-700)}
+.ride-type-card .desc{font-size:10px;color:var(--slate-400);margin-top:2px}
+.ride-type-card.selected .name{color:var(--sky-dark)}
+.insurance-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.ins-opt{border:2px solid var(--slate-200);border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;background:white;transition:all .2s}
+.ins-opt.selected{border-color:var(--emerald);background:var(--emerald-light)}
+.ins-opt .ins-icon{font-size:22px}
+.ins-opt .ins-name{font-size:14px;font-weight:700;color:var(--slate-700)}
+.ins-opt .ins-sub{font-size:11px;color:var(--slate-400)}
+.ins-opt.selected .ins-name{color:var(--emerald-dark)}
+.confirm-summary{background:var(--slate-50);border-radius:14px;border:1px solid var(--slate-200);padding:16px;margin-bottom:14px}
+.cs-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--slate-100)}
+.cs-row:last-child{border-bottom:none}
+.cs-label{font-size:12px;color:var(--slate-400);font-weight:500}
+.cs-value{font-size:13px;font-weight:700;color:var(--slate-800);text-align:right;max-width:200px}
+.price-estimate{background:var(--transport-grad);border-radius:12px;padding:14px 16px;color:white;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pe-label{font-size:12px;opacity:.8}
+.pe-price{font-size:22px;font-weight:800}
+.pe-covered{font-size:11px;background:rgba(255,255,255,.2);padding:3px 8px;border-radius:10px;margin-top:4px}
+
+/* ══════════ SEARCHING ══════════ */
+#s-m-searching{align-items:center;justify-content:center;background:var(--slate-900);padding:40px 28px}
+.search-anim{position:relative;width:160px;height:160px;margin-bottom:32px}
+.search-ring{position:absolute;inset:0;border-radius:50%;border:2px solid transparent;animation:ring-pulse 2s infinite}
+.search-ring:nth-child(1){border-color:rgba(14,165,233,.6);animation-delay:0s}
+.search-ring:nth-child(2){inset:16px;border-color:rgba(14,165,233,.4);animation-delay:.4s}
+.search-ring:nth-child(3){inset:32px;border-color:rgba(14,165,233,.25);animation-delay:.8s}
+@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.6}}
+.search-center{position:absolute;inset:48px;background:var(--transport-grad);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px}
+.search-title{font-size:22px;font-weight:800;color:white;text-align:center;margin-bottom:8px}
+.search-sub{font-size:13px;color:var(--slate-400);text-align:center;margin-bottom:24px}
+.search-progress{width:100%;background:rgba(255,255,255,.1);height:4px;border-radius:2px;overflow:hidden;margin-bottom:20px}
+.search-bar{height:100%;background:var(--transport-grad);animation:progress-run 3s ease-in-out forwards}
+@keyframes progress-run{0%{width:0%}100%{width:95%}}
+.search-status{font-size:12px;color:var(--slate-400);text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
+.blink-dot{width:8px;height:8px;border-radius:50%;background:var(--emerald);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ══════════ DRIVER MATCHED ══════════ */
+.matched-header{background:var(--transport-grad);padding:24px 18px 48px;color:white;text-align:center}
+.matched-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.matched-sub{font-size:13px;opacity:.8}
+.driver-profile-card{margin:-32px 14px 12px;background:white;border-radius:18px;border:1px solid var(--slate-200);padding:20px;box-shadow:var(--shadow)}
+.dpc-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.dpc-avatar{width:64px;height:64px;border-radius:50%;background:var(--driver-grad);display:flex;align-items:center;justify-content:center;font-size:28px;color:white;font-weight:700;flex-shrink:0;position:relative}
+.dpc-verified{position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;background:var(--emerald);border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:10px}
+.dpc-name{font-size:18px;font-weight:800;color:var(--slate-900)}
+.dpc-rating{font-size:13px;color:var(--amber);font-weight:700;margin-top:2px}
+.dpc-trips{font-size:11px;color:var(--slate-400)}
+.dpc-vehicle{background:var(--slate-50);border-radius:12px;padding:12px;margin-bottom:14px}
+.dpc-vehicle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.dpc-vehicle-name{font-size:15px;font-weight:700;color:var(--slate-800)}
+.dpc-plate{font-size:13px;font-family:'JetBrains Mono',monospace;background:white;border:1px solid var(--slate-200);border-radius:6px;padding:2px 8px;color:var(--slate-700);font-weight:600}
+.dpc-vehicle-meta{font-size:12px;color:var(--slate-400)}
+.dpc-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.dpc-actions{display:flex;gap:10px}
+.dpc-action{flex:1;padding:12px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.dpc-action:hover{opacity:.85}
+.dpc-action-call{background:var(--emerald-light);color:var(--emerald-dark)}
+.dpc-action-msg{background:var(--sky-light);color:var(--sky-dark)}
+.eta-banner{margin:0 14px 12px;background:var(--slate-900);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;color:white}
+.eta-label{font-size:12px;opacity:.6}
+.eta-value{font-size:28px;font-weight:800}
+.eta-unit{font-size:13px;opacity:.7}
+.eta-dist{font-size:12px;color:var(--sky)}
+
+/* ══════════ TRACKING MAP ══════════ */
+.map-full{position:absolute;inset:0;z-index:0}
+.map-overlay-bottom{position:absolute;bottom:0;left:0;right:0;z-index:500;background:white;border-radius:20px 20px 0 0;padding:16px 18px 24px;box-shadow:0 -4px 30px rgba(0,0,0,.15)}
+.map-status-pill{display:inline-flex;align-items:center;gap:6px;background:var(--transport-grad);color:white;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:12px}
+.mob-driver{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.mob-driver-av{width:44px;height:44px;border-radius:50%;background:var(--driver-grad);display:flex;align-items:center;justify-content:center;font-size:20px;color:white;font-weight:700;flex-shrink:0}
+.mob-driver-name{font-size:15px;font-weight:700;color:var(--slate-800)}
+.mob-driver-vehicle{font-size:12px;color:var(--slate-400)}
+.mob-eta{margin-left:auto;text-align:right}
+.mob-eta-val{font-size:22px;font-weight:800;color:var(--slate-900)}
+.mob-eta-label{font-size:10px;color:var(--slate-400);font-weight:600}
+.mob-actions{display:flex;gap:8px}
+.mob-btn{flex:1;padding:11px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.mob-btn:hover{opacity:.85}
+
+/* ══════════ COMPLETE / RATING ══════════ */
+.complete-header{background:var(--driver-grad);padding:32px 18px 48px;color:white;text-align:center}
+.complete-icon{font-size:56px;margin-bottom:12px}
+.complete-title{font-size:24px;font-weight:800;margin-bottom:4px}
+.complete-sub{font-size:13px;opacity:.8}
+.rating-card{margin:-32px 14px 14px;background:white;border-radius:18px;border:1px solid var(--slate-200);padding:20px;box-shadow:var(--shadow)}
+.rating-label{font-size:14px;font-weight:600;color:var(--slate-600);text-align:center;margin-bottom:14px}
+.stars{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
+.star{font-size:36px;cursor:pointer;transition:transform .2s;filter:grayscale(1)}
+.star.active{filter:none;transform:scale(1.1)}
+.trip-summary{background:var(--slate-50);border-radius:14px;padding:14px;margin-bottom:14px}
+.ts-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--slate-100);font-size:13px}
+.ts-row:last-child{border-bottom:none}
+.ts-label{color:var(--slate-400);font-weight:500}
+.ts-value{color:var(--slate-800);font-weight:700}
+
+/* ══════════ DRIVER LOGIN ══════════ */
+#s-d-login{background:var(--slate-900);padding:32px 24px;justify-content:center}
+.d-login-logo{text-align:center;margin-bottom:28px}
+
+/* ══════════ DRIVER ONBOARDING ══════════ */
+.onboard-step{display:none;flex-direction:column;flex:1;padding:16px 14px 20px;overflow-y:auto}
+.onboard-step::-webkit-scrollbar{display:none}
+.onboard-step.active{display:flex}
+.onboard-step-title{font-size:18px;font-weight:800;color:var(--slate-900);margin-bottom:2px}
+.onboard-step-sub{font-size:12px;color:var(--slate-400);margin-bottom:18px}
+.upload-zone{border:2px dashed var(--slate-300);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:white;margin-bottom:14px;position:relative;overflow:hidden}
+.upload-zone:hover{border-color:var(--sky);background:var(--sky-light)}
+.upload-zone.uploaded{border-color:var(--emerald);background:var(--emerald-light);border-style:solid}
+.upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-text{font-size:13px;font-weight:600;color:var(--slate-500)}
+.upload-zone.uploaded .upload-text{color:var(--emerald-dark)}
+.check-grid{display:flex;flex-direction:column;gap:8px}
+.check-item{display:flex;align-items:center;gap:12px;background:white;border:1.5px solid var(--slate-200);border-radius:12px;padding:13px 14px;cursor:pointer;transition:all .2s}
+.check-item.checked{border-color:var(--emerald);background:var(--emerald-light)}
+.check-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--slate-300);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s}
+.check-item.checked .check-box{background:var(--emerald);border-color:var(--emerald);color:white}
+.check-text{font-size:13px;font-weight:600;color:var(--slate-700)}
+.check-item.checked .check-text{color:var(--emerald-dark)}
+.validation-status{border-radius:14px;padding:16px;margin-bottom:14px;text-align:center}
+.vs-pending{background:var(--amber-light);border:1px solid #fcd34d}
+.vs-approved{background:var(--emerald-light);border:1px solid #6ee7b7}
+.vs-icon{font-size:36px;margin-bottom:8px}
+.vs-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.vs-sub{font-size:12px;opacity:.8}
+.vs-pending .vs-title,.vs-pending .vs-sub{color:var(--amber)}
+.vs-approved .vs-title,.vs-approved .vs-sub{color:var(--emerald-dark)}
+.progress-bar-wrap{background:var(--slate-200);border-radius:4px;height:6px;overflow:hidden;margin-top:12px}
+.progress-bar{height:100%;background:var(--transport-grad);transition:width .5s ease}
+.val-item{display:flex;align-items:center;gap:10px;padding:10px;background:white;border-radius:10px;margin-bottom:8px;border:1px solid var(--slate-200)}
+.val-item-icon{font-size:20px;width:32px;text-align:center}
+.val-item-label{font-size:13px;font-weight:600;color:var(--slate-700);flex:1}
+.val-item-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px}
+.val-ok{background:var(--emerald-light);color:var(--emerald-dark)}
+.val-pending{background:var(--amber-light);color:var(--amber)}
+.val-checking{background:var(--sky-light);color:var(--sky-dark)}
+
+/* ══════════ DRIVER HOME ══════════ */
+.d-home-header{padding:20px 18px 16px;background:var(--slate-900)}
+.d-home-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.d-home-greeting{font-size:18px;font-weight:800;color:white}
+.d-home-id{font-size:11px;color:var(--slate-400)}
+.d-avatar{width:44px;height:44px;border-radius:50%;background:var(--driver-grad);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;font-weight:700}
+.availability-toggle{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:14px;padding:14px 16px}
+.at-label{font-size:14px;font-weight:700;color:white}
+.at-sub{font-size:11px;color:var(--slate-400)}
+.toggle-switch{width:52px;height:28px;background:var(--slate-600);border-radius:14px;position:relative;cursor:pointer;transition:background .3s;flex-shrink:0}
+.toggle-switch.on{background:var(--emerald)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:white;transition:left .3s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.toggle-switch.on .toggle-thumb{left:27px}
+.d-home-body{flex:1;background:var(--slate-50);padding:14px 0 0}
+.stats-row{display:flex;gap:10px;padding:0 14px 14px}
+.stat-box{flex:1;background:white;border-radius:14px;border:1px solid var(--slate-200);padding:14px 12px;text-align:center}
+.stat-val{font-size:22px;font-weight:800;color:var(--slate-900)}
+.stat-label{font-size:10px;color:var(--slate-400);font-weight:600;text-transform:uppercase;margin-top:2px}
+.validation-bar{margin:0 14px 14px;background:var(--emerald-light);border:1px solid #6ee7b7;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.vb-icon{font-size:22px}
+.vb-title{font-size:13px;font-weight:700;color:var(--emerald-dark)}
+.vb-sub{font-size:11px;color:#065f46}
+
+/* ══════════ INCOMING RIDE ══════════ */
+.incoming-header{background:var(--driver-grad);padding:20px 18px 36px;color:white}
+.incoming-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;margin-bottom:12px}
+.incoming-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:#fbbf24;animation:blink 1s infinite}
+.incoming-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.incoming-earnings{font-size:16px;font-weight:700;background:rgba(255,255,255,.2);display:inline-block;padding:4px 14px;border-radius:20px;margin-top:4px}
+.ride-detail-card{margin:-20px 14px 12px;background:white;border-radius:18px;border:1px solid var(--slate-200);padding:18px;box-shadow:var(--shadow)}
+.ride-route{position:relative;padding-left:22px;margin-bottom:14px}
+.route-dot{width:10px;height:10px;border-radius:50%;position:absolute;left:0;top:3px}
+.route-dot.pickup{background:var(--sky)}
+.route-dot.dest{background:var(--red)}
+.route-line{position:absolute;left:4px;top:16px;width:2px;height:24px;background:var(--slate-200)}
+.route-label{font-size:10px;font-weight:700;color:var(--slate-400);text-transform:uppercase}
+.route-value{font-size:13px;font-weight:600;color:var(--slate-800);margin-bottom:18px}
+.member-preview{display:flex;align-items:center;gap:10px;background:var(--slate-50);border-radius:12px;padding:10px;margin-bottom:14px}
+.mp-avatar{width:40px;height:40px;border-radius:50%;background:var(--violet-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.mp-name{font-size:13px;font-weight:700;color:var(--slate-800)}
+.mp-insurance{font-size:11px;color:var(--slate-400)}
+.mp-special{font-size:11px;color:var(--amber);font-weight:600;margin-top:2px}
+.ride-meta-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.rmd{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--slate-600)}
+.accept-decline{display:flex;gap:10px}
+.timer-ring{width:56px;height:56px;position:relative;flex-shrink:0}
+.timer-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.timer-ring .timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--slate-800);font-family:'JetBrains Mono',monospace}
+
+/* ══════════ DRIVER NAVIGATE / TRANSIT ══════════ */
+.driver-map-overlay{position:absolute;bottom:0;left:0;right:0;z-index:500;background:white;border-radius:20px 20px 0 0;padding:16px 18px 24px;box-shadow:0 -4px 30px rgba(0,0,0,.15)}
+.nav-phase-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;margin-bottom:10px}
+.nav-phase-pickup{background:var(--sky-light);color:var(--sky-dark)}
+.nav-phase-transit{background:var(--emerald-light);color:var(--emerald-dark)}
+.nav-info{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.nav-dest{font-size:15px;font-weight:700;color:var(--slate-800);flex:1}
+.nav-eta-box{text-align:right}
+.nav-eta-val{font-size:24px;font-weight:800;color:var(--slate-900)}
+.nav-eta-unit{font-size:11px;color:var(--slate-400);font-weight:600}
+.nav-dist{font-size:12px;color:var(--sky);font-weight:600;margin-top:2px;text-align:right}
+
+/* ══════════ VERIFY MEMBER ══════════ */
+.verify-card{margin:0 14px 14px;background:white;border-radius:18px;border:1px solid var(--slate-200);padding:20px;box-shadow:var(--shadow)}
+.qr-mock{width:140px;height:140px;background:var(--slate-900);border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:64px}
+.verify-member-info{text-align:center;margin-bottom:16px}
+.vm-name{font-size:18px;font-weight:800;color:var(--slate-900);margin-bottom:4px}
+.vm-id{font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--slate-500)}
+.vm-insurance{font-size:12px;font-weight:600;color:var(--sky-dark);margin-top:4px}
+.verify-checklist{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.vc-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--slate-50);border-radius:10px;cursor:pointer;transition:all .2s}
+.vc-item.done{background:var(--emerald-light)}
+.vc-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--slate-300);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all .2s}
+.vc-item.done .vc-check{background:var(--emerald);border-color:var(--emerald);color:white}
+.vc-text{font-size:13px;font-weight:600;color:var(--slate-600)}
+.vc-item.done .vc-text{color:var(--emerald-dark)}
+
+/* ══════════ DRIVER COMPLETE ══════════ */
+.d-complete-header{background:var(--driver-grad);padding:32px 18px 48px;color:white;text-align:center}
+.d-complete-card{margin:-32px 14px 14px;background:white;border-radius:18px;border:1px solid var(--slate-200);padding:20px;box-shadow:var(--shadow)}
+.earnings-display{text-align:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--slate-100)}
+.ed-earned{font-size:36px;font-weight:800;color:var(--slate-900)}
+.ed-label{font-size:13px;color:var(--slate-400)}
+.ed-breakdown{display:flex;justify-content:center;gap:14px;margin-top:8px}
+.ed-item{font-size:12px;color:var(--slate-500)}
+.ed-item strong{color:var(--slate-700)}
+
+/* ══════════ BOTTOM NAV ══════════ */
+.bottom-nav{display:flex;border-top:1px solid var(--slate-100);background:white;flex-shrink:0}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 6px;cursor:pointer;font-size:9px;color:var(--slate-400);font-weight:700;text-transform:uppercase;letter-spacing:.5px;transition:color .15s}
+.bni .icon{font-size:20px}
+.bni.active{color:var(--sky)}
+
+/* NOTIFICATION TOAST */
+.toast{position:absolute;top:60px;left:14px;right:14px;z-index:2000;background:white;border-radius:14px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.2);display:flex;align-items:center;gap:12px;transform:translateY(-120%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);border-left:4px solid var(--emerald)}
+.toast.show{transform:translateY(0)}
+.toast-icon{font-size:22px;flex-shrink:0}
+.toast-title{font-size:14px;font-weight:700;color:var(--slate-900)}
+.toast-sub{font-size:12px;color:var(--slate-400)}
+
+/* AI CHAT BUTTON */
+.ai-fab{position:absolute;bottom:80px;right:16px;z-index:1000;width:48px;height:48px;background:var(--transport-grad);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(14,165,233,.4);border:none;transition:transform .2s}
+.ai-fab:hover{transform:scale(1.1)}
+
+/* AI MODAL */
+.ai-modal{position:absolute;inset:0;z-index:3000;background:rgba(0,0,0,.5);display:flex;flex-direction:column;justify-content:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
+.ai-modal.open{opacity:1;pointer-events:all}
+.ai-sheet{background:white;border-radius:20px 20px 0 0;max-height:75%;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.ai-modal.open .ai-sheet{transform:translateY(0)}
+.ai-sheet-header{padding:12px 18px;border-bottom:1px solid var(--slate-100);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ai-sheet-handle{width:36px;height:4px;background:var(--slate-200);border-radius:2px;margin:10px auto 0}
+.ai-messages{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
+.ai-messages::-webkit-scrollbar{display:none}
+.ai-msg-wrap{display:flex;gap:8px;align-items:flex-end}
+.ai-msg-wrap.user{flex-direction:row-reverse}
+.ai-bubble{max-width:78%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.45}
+.ai-bubble.bot{background:var(--slate-100);color:var(--slate-800);border-bottom-left-radius:4px}
+.ai-bubble.user{background:var(--transport-grad);color:white;border-bottom-right-radius:4px}
+.ai-bubble.thinking{display:flex;gap:4px;align-items:center}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--slate-400);animation:tbounce 1.2s infinite}
+.tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+@keyframes tbounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+.ai-input-row{display:flex;gap:8px;padding:10px 14px 16px;border-top:1px solid var(--slate-100);flex-shrink:0}
+.ai-input{flex:1;background:var(--slate-100);border:1.5px solid var(--slate-200);border-radius:24px;padding:9px 14px;font-size:13px;font-family:inherit;color:var(--slate-800);outline:none;transition:border-color .2s}
+.ai-input:focus{border-color:#7dd3fc;background:white}
+.ai-send{width:36px;height:36px;background:var(--transport-grad);border:none;border-radius:50%;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s}
+.ai-send:hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <h1>🚐 <span>NEMT Transport</span></h1>
+    <p>HHAeXchange+ Module</p>
+  </div>
+  <div class="sb-link-back" onclick="window.location.href='hhaxchange-ai.html'">← Back to Main App</div>
+
+  <div class="view-toggle">
+    <button class="vt-btn active" id="vt-member" onclick="togglePortalView('member')">👤 Member</button>
+    <button class="vt-btn" id="vt-driver" onclick="togglePortalView('driver')">🚗 Driver</button>
+  </div>
+
+  <div class="sb-section">Member Portal</div>
+  <div class="sb-item active" id="sbi-welcome" onclick="gotoScreen('s-welcome');setSBI(this)"><span class="icon">🏠</span>Welcome</div>
+  <div class="sb-item" id="sbi-m-login" onclick="gotoScreen('s-m-login');setSBI(this)"><span class="icon">🔐</span>Member Login</div>
+  <div class="sb-item" id="sbi-m-home" onclick="gotoScreen('s-m-home');setSBI(this)"><span class="icon">📋</span>My Rides</div>
+  <div class="sb-item" id="sbi-m-request" onclick="gotoScreen('s-m-request');reqStep=1;showReqStep(1);setSBI(this)"><span class="icon">➕</span>Request Ride</div>
+  <div class="sb-item" id="sbi-m-tracking" onclick="startFullRideSim();setSBI(this)"><span class="icon">📍</span>Live Tracking</div>
+  <div class="sb-item" id="sbi-m-complete" onclick="gotoScreen('s-m-complete');setSBI(this)"><span class="icon">⭐</span>Rate & Review</div>
+  <hr class="sb-divider">
+  <div class="sb-section">Driver Portal</div>
+  <div class="sb-item" id="sbi-d-login" onclick="gotoScreen('s-d-login');setSBI(this)"><span class="icon">🔑</span>Driver Login</div>
+  <div class="sb-item" id="sbi-d-onboard" onclick="gotoScreen('s-d-onboard');showOnboardStep(1);setSBI(this)"><span class="icon">✅</span>Validation</div>
+  <div class="sb-item" id="sbi-d-home" onclick="gotoScreen('s-d-home');setSBI(this)"><span class="icon">📊</span>Driver Dashboard</div>
+  <div class="sb-item" id="sbi-d-incoming" onclick="gotoScreen('s-d-incoming');startAcceptTimer();setSBI(this)"><span class="icon">🔔</span>Incoming Request</div>
+  <div class="sb-item" id="sbi-d-navigate" onclick="startDriverNav();setSBI(this)"><span class="icon">🗺️</span>Navigate to Pickup</div>
+  <div class="sb-item" id="sbi-d-verify" onclick="gotoScreen('s-d-verify');setSBI(this)"><span class="icon">🆔</span>Verify Member</div>
+  <div class="sb-item" id="sbi-d-transit" onclick="startDriverTransit();setSBI(this)"><span class="icon">🏥</span>En Route to Dest.</div>
+  <div class="sb-item" id="sbi-d-complete" onclick="gotoScreen('s-d-complete');setSBI(this)"><span class="icon">🏁</span>Trip Complete</div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="phone" id="phone">
+    <!-- STATUS BAR -->
+    <div class="status-bar" id="status-bar" style="background:white">
+      <span>9:41 AM</span>
+      <div style="display:flex;gap:4px;align-items:center"><span>📶</span><span>LTE</span><span>🔋 87%</span></div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+      <span class="toast-icon" id="toast-icon">✅</span>
+      <div><div class="toast-title" id="toast-title">Driver matched!</div><div class="toast-sub" id="toast-sub">Carlos is on his way</div></div>
+    </div>
+
+    <!-- AI FAB (hidden on map/dark screens) -->
+    <button class="ai-fab" id="ai-fab" onclick="openAIDispatch()">🤖</button>
+
+    <!-- AI DISPATCH MODAL -->
+    <div class="ai-modal" id="ai-modal">
+      <div class="ai-sheet">
+        <div class="ai-sheet-handle"></div>
+        <div class="ai-sheet-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">🤖</span>
+            <div><div style="font-size:14px;font-weight:800;color:var(--slate-900)">AI Dispatch Assistant</div><div style="font-size:11px;color:var(--emerald);font-weight:600">Online</div></div>
+          </div>
+          <span style="font-size:20px;color:var(--slate-400);cursor:pointer" onclick="closeAIDispatch()">×</span>
+        </div>
+        <div class="ai-messages" id="ai-msgs">
+          <div class="ai-msg-wrap"><div class="ai-bubble bot">Hi! I'm your NEMT dispatch assistant. I can help you request rides, check status, find accessible vehicles, or answer insurance questions. What do you need? 🚐</div></div>
+        </div>
+        <div class="ai-input-row">
+          <input class="ai-input" id="ai-input" placeholder="Ask about your transport…" onkeydown="if(event.key==='Enter')sendAI()">
+          <button class="ai-send" onclick="sendAI()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREENS CONTAINER -->
+    <div class="screen-wrap">
+
+      <!-- ═══════════ WELCOME ═══════════ -->
+      <div class="screen active" id="s-welcome">
+        <div style="flex:1;background:var(--slate-900);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px">
+          <div class="wlc-logo">
+            <div class="wlc-icon">🚐</div>
+            <div class="wlc-h"><span>NEMT</span> Transport</div>
+            <div class="wlc-sub">Non-Emergency Medical Transportation</div>
+            <div style="margin-top:8px;font-size:11px;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);color:var(--sky);padding:4px 12px;border-radius:20px;display:inline-block;font-weight:600">HHAeXchange+ Integrated</div>
+          </div>
+          <div style="width:100%">
+            <div class="role-card" onclick="gotoScreen('s-m-login')">
+              <div class="role-card-header">
+                <div class="role-icon role-icon-member">👤</div>
+                <div style="flex:1">
+                  <div class="role-name">I'm a Member</div>
+                  <div class="role-desc">Schedule or track your medical transport</div>
+                </div>
+                <div class="role-arrow">›</div>
+              </div>
+              <div class="role-bullets">
+                <div class="role-bullet">Request rides to medical appointments</div>
+                <div class="role-bullet">Real-time GPS driver tracking</div>
+                <div class="role-bullet">Insurance-covered transportation</div>
+              </div>
+            </div>
+            <div class="role-card" onclick="gotoScreen('s-d-login')">
+              <div class="role-card-header">
+                <div class="role-icon role-icon-driver">🚗</div>
+                <div style="flex:1">
+                  <div class="role-name">I'm a Driver</div>
+                  <div class="role-desc">Accept rides and earn with NEMT</div>
+                </div>
+                <div class="role-arrow">›</div>
+              </div>
+              <div class="role-bullets">
+                <div class="role-bullet">Complete validation & get approved fast</div>
+                <div class="role-bullet">Accept rides in your area</div>
+                <div class="role-bullet">GPS-guided navigation included</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ MEMBER LOGIN ═══════════ -->
+      <div class="screen" id="s-m-login">
+        <div style="flex:1;background:var(--slate-900);display:flex;flex-direction:column;padding:32px 24px;justify-content:center">
+          <div class="m-login-logo">
+            <div style="font-size:40px;margin-bottom:12px">👤</div>
+            <div class="m-login-title">Member Login</div>
+            <div class="m-login-sub">Enter your details to access your transport account</div>
+          </div>
+          <div class="login-box">
+            <input class="login-field" type="text" placeholder="Member ID (e.g. MB-1001)" id="m-id-input">
+            <input class="login-field" type="text" placeholder="Date of Birth (MM/DD/YYYY)">
+            <input class="login-field" type="text" placeholder="Last Name">
+            <button class="login-btn" onclick="memberLogin()">Sign In →</button>
+          </div>
+          <div class="login-demo" style="margin-top:16px">
+            Demo: <span onclick="document.getElementById('m-id-input').value='MB-1001';memberLogin()">Use MB-1001</span> · <span onclick="document.getElementById('m-id-input').value='MB-2002';memberLogin()">Use MB-2002</span>
+          </div>
+          <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--slate-400)">New member? <span style="color:var(--sky);cursor:pointer;font-weight:600" onclick="memberLogin()">Create Account →</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ MEMBER HOME ═══════════ -->
+      <div class="screen" id="s-m-home">
+        <div class="m-home-header">
+          <div class="m-home-greeting" id="m-greeting">Good morning, Maria 👋</div>
+          <div class="m-home-id">Member ID: MB-1001 · Brooklyn, NY</div>
+          <div class="insurance-badge">🏥 Medicaid · NY-0045-2891</div>
+        </div>
+        <div class="m-home-body">
+          <button class="quick-request-btn" onclick="gotoScreen('s-m-request');reqStep=1;showReqStep(1)">
+            <div class="qrb-icon">🚐</div>
+            <div class="qrb-text">
+              <div class="t">Request a Ride</div>
+              <div class="s">Schedule medical transportation now</div>
+            </div>
+            <div style="margin-left:auto;font-size:22px">→</div>
+          </button>
+
+          <div class="section-h">Upcoming Rides</div>
+          <div class="upcoming-card">
+            <div class="uc-header">
+              <div>
+                <div class="uc-date">Wed, Apr 9 · 10:00 AM</div>
+                <div class="uc-dest">📍 NYU Langone Brooklyn · Nephrology Dept</div>
+              </div>
+              <span class="uc-status tag-sky tag">Scheduled</span>
+            </div>
+            <div class="uc-driver">
+              <div class="uc-driver-av">C</div>
+              <div>
+                <div class="uc-driver-name">Carlos Rivera · ⭐ 4.97</div>
+                <div class="uc-driver-vehicle">2022 Toyota Sienna · Blue · ABC-1234</div>
+              </div>
+              <button class="btn btn-sky btn-sm" style="margin-left:auto" onclick="startFullRideSim()">Track →</button>
+            </div>
+          </div>
+
+          <div class="section-h">Ride History</div>
+          <div style="background:white;margin:0 14px 16px;border-radius:var(--r);border:1px solid var(--slate-200)">
+            <div class="history-item">
+              <div class="hi-icon">🏥</div>
+              <div><div class="hi-dest">Methodist Hospital — Cardiology</div><div class="hi-date">Mon Apr 7 · Completed</div></div>
+              <div class="hi-price">$0 <span style="font-size:10px;color:var(--emerald-dark);font-weight:700">Covered</span></div>
+            </div>
+            <div class="history-item">
+              <div class="hi-icon">💊</div>
+              <div><div class="hi-dest">Walgreens Pharmacy — Ocean Ave</div><div class="hi-date">Fri Apr 4 · Completed</div></div>
+              <div class="hi-price">$0 <span style="font-size:10px;color:var(--emerald-dark);font-weight:700">Covered</span></div>
+            </div>
+            <div class="history-item">
+              <div class="hi-icon">🩺</div>
+              <div><div class="hi-dest">Dr. Singh Primary Care</div><div class="hi-date">Tue Apr 1 · Completed</div></div>
+              <div class="hi-price">$0 <span style="font-size:10px;color:var(--emerald-dark);font-weight:700">Covered</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ RIDE REQUEST ═══════════ -->
+      <div class="screen" id="s-m-request">
+        <div class="ph">
+          <span class="ph-back" onclick="gotoScreen('s-m-home')">‹</span>
+          <div><div class="ph-title">Request a Ride</div><div class="ph-sub" id="req-step-label">Step 1 of 4 — Pickup Location</div></div>
+        </div>
+        <!-- Step bar -->
+        <div class="step-bar">
+          <div class="step-dot active" id="sdot-1">1</div>
+          <div class="step-line" id="sline-1"></div>
+          <div class="step-dot pending" id="sdot-2">2</div>
+          <div class="step-line" id="sline-2"></div>
+          <div class="step-dot pending" id="sdot-3">3</div>
+          <div class="step-line" id="sline-3"></div>
+          <div class="step-dot pending" id="sdot-4">4</div>
+        </div>
+        <div style="flex:1;overflow-y:auto;scrollbar-width:none">
+        <!-- Step 1: Pickup -->
+        <div class="req-step active" id="req-step-1">
+          <div class="req-step-title">📍 Pickup Location</div>
+          <div class="req-step-sub">Where should we pick you up?</div>
+          <button class="gps-btn" id="gps-btn" onclick="getGPSLocation()">
+            <span>📡</span> <span id="gps-btn-text">Use My Current GPS Location</span>
+          </button>
+          <div style="text-align:center;font-size:12px;color:var(--slate-400);margin-bottom:12px">— or type address —</div>
+          <div class="location-input-wrap">
+            <span class="location-input-icon">🔵</span>
+            <input class="location-input" id="pickup-input" placeholder="Enter pickup address" value="123 Ocean Ave, Brooklyn, NY 11218">
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--slate-500);margin-bottom:8px">Recent addresses:</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+            <div class="history-item" style="background:white;border:1px solid var(--slate-200);border-radius:10px;padding:10px 12px;cursor:pointer;margin:0" onclick="document.getElementById('pickup-input').value=this.querySelector('div div').textContent">
+              <div class="hi-icon" style="width:30px;height:30px;font-size:14px">🏠</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--slate-700)">123 Ocean Ave, Brooklyn, NY 11218</div><div class="hi-date">Home</div></div>
+            </div>
+            <div class="history-item" style="background:white;border:1px solid var(--slate-200);border-radius:10px;padding:10px 12px;cursor:pointer;margin:0" onclick="document.getElementById('pickup-input').value=this.querySelector('div div').textContent">
+              <div class="hi-icon" style="width:30px;height:30px;font-size:14px">💊</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--slate-700)">456 Flatbush Ave, Brooklyn, NY 11225</div><div class="hi-date">Used 3x</div></div>
+            </div>
+          </div>
+          <button class="btn btn-sky" onclick="advanceReqStep()">Continue →</button>
+        </div>
+        <!-- Step 2: Destination -->
+        <div class="req-step" id="req-step-2">
+          <div class="req-step-title">🏥 Destination</div>
+          <div class="req-step-sub">Where are you going?</div>
+          <div class="location-input-wrap" style="margin-bottom:12px">
+            <span class="location-input-icon">🔴</span>
+            <input class="location-input" id="dest-input" placeholder="Hospital, clinic, pharmacy…" value="NYU Langone Brooklyn, 150 55th St">
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--slate-500);margin-bottom:8px">Nearby medical facilities:</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+            <div class="history-item" style="background:white;border:1px solid var(--slate-200);border-radius:10px;padding:10px 12px;cursor:pointer;margin:0" onclick="document.getElementById('dest-input').value='NYU Langone Brooklyn, 150 55th St'">
+              <div class="hi-icon" style="width:30px;height:30px;font-size:14px">🏥</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--slate-700)">NYU Langone Brooklyn · 0.8 mi</div><div class="hi-date">Hospital</div></div>
+            </div>
+            <div class="history-item" style="background:white;border:1px solid var(--slate-200);border-radius:10px;padding:10px 12px;cursor:pointer;margin:0" onclick="document.getElementById('dest-input').value='Methodist Hospital, 506 6th St, Brooklyn'">
+              <div class="hi-icon" style="width:30px;height:30px;font-size:14px">🏥</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--slate-700)">Methodist Hospital · 1.3 mi</div><div class="hi-date">Hospital</div></div>
+            </div>
+            <div class="history-item" style="background:white;border:1px solid var(--slate-200);border-radius:10px;padding:10px 12px;cursor:pointer;margin:0" onclick="document.getElementById('dest-input').value='Dr. Singh Primary Care, 789 Church Ave'">
+              <div class="hi-icon" style="width:30px;height:30px;font-size:14px">🩺</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--slate-700)">Dr. Singh Primary Care · 0.4 mi</div><div class="hi-date">Clinic</div></div>
+            </div>
+          </div>
+          <button class="btn btn-sky" onclick="advanceReqStep()">Continue →</button>
+        </div>
+        <!-- Step 3: Ride Details -->
+        <div class="req-step" id="req-step-3">
+          <div class="req-step-title">🗓 Ride Details</div>
+          <div class="req-step-sub">When and what type of vehicle?</div>
+          <div class="form-group">
+            <label class="form-label">Pickup Date & Time</label>
+            <div class="form-row">
+              <input class="form-input" type="date" id="ride-date" value="2025-04-09">
+              <input class="form-input" type="time" id="ride-time" value="10:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vehicle Type</label>
+            <div class="ride-type-grid">
+              <div class="ride-type-card selected" id="rt-standard" onclick="selectRideType('standard')">
+                <div class="icon">🚗</div><div class="name">Standard</div><div class="desc">Sedan or SUV</div>
+              </div>
+              <div class="ride-type-card" id="rt-xl" onclick="selectRideType('xl')">
+                <div class="icon">🚐</div><div class="name">XL Van</div><div class="desc">Up to 6 passengers</div>
+              </div>
+              <div class="ride-type-card" id="rt-wheelchair" onclick="selectRideType('wheelchair')">
+                <div class="icon">♿</div><div class="name">Wheelchair</div><div class="desc">WAV equipped</div>
+              </div>
+              <div class="ride-type-card" id="rt-stretcher" onclick="selectRideType('stretcher')">
+                <div class="icon">🛏</div><div class="name">Stretcher</div><div class="desc">Non-ambulatory</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Round Trip?</label>
+            <div style="display:flex;gap:10px">
+              <button id="rt-yes" class="btn btn-sm" style="background:var(--sky-light);color:var(--sky-dark);border:2px solid var(--sky);flex:1" onclick="toggleRoundTrip(true)">Yes, Round Trip</button>
+              <button id="rt-no" class="btn btn-sm" style="background:var(--slate-100);color:var(--slate-600);border:2px solid transparent;flex:1" onclick="toggleRoundTrip(false)">One Way</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Special Needs / Notes</label>
+            <input class="form-input" type="text" placeholder="Oxygen tank, walker, companion…" id="special-notes">
+          </div>
+          <button class="btn btn-sky" onclick="advanceReqStep()">Continue →</button>
+        </div>
+        <!-- Step 4: Insurance & Confirm -->
+        <div class="req-step" id="req-step-4">
+          <div class="req-step-title">💳 Insurance & Confirm</div>
+          <div class="req-step-sub">How will this ride be covered?</div>
+          <div class="form-group">
+            <label class="form-label">Insurance Type</label>
+            <div class="insurance-opts">
+              <div class="ins-opt selected" id="ins-medicaid" onclick="selectIns('medicaid')">
+                <div class="ins-icon">🏛</div>
+                <div><div class="ins-name">Medicaid</div><div class="ins-sub">Fully covered for eligible trips</div></div>
+                <span id="ins-check-medicaid" style="margin-left:auto;color:var(--emerald);font-size:18px">✓</span>
+              </div>
+              <div class="ins-opt" id="ins-medicare" onclick="selectIns('medicare')">
+                <div class="ins-icon">🏥</div>
+                <div><div class="ins-name">Medicare</div><div class="ins-sub">Covered with prior authorization</div></div>
+                <span id="ins-check-medicare" style="display:none;margin-left:auto;color:var(--emerald);font-size:18px">✓</span>
+              </div>
+              <div class="ins-opt" id="ins-private" onclick="selectIns('private')">
+                <div class="ins-icon">💼</div>
+                <div><div class="ins-name">Private Insurance</div><div class="ins-sub">Submit claim after trip</div></div>
+                <span id="ins-check-private" style="display:none;margin-left:auto;color:var(--emerald);font-size:18px">✓</span>
+              </div>
+              <div class="ins-opt" id="ins-self" onclick="selectIns('self')">
+                <div class="ins-icon">💵</div>
+                <div><div class="ins-name">Self-Pay</div><div class="ins-sub">Pay at time of service</div></div>
+                <span id="ins-check-self" style="display:none;margin-left:auto;color:var(--emerald);font-size:18px">✓</span>
+              </div>
+            </div>
+          </div>
+          <div class="confirm-summary">
+            <div class="cs-row"><span class="cs-label">Pickup</span><span class="cs-value" id="cs-pickup">123 Ocean Ave, Brooklyn</span></div>
+            <div class="cs-row"><span class="cs-label">Destination</span><span class="cs-value" id="cs-dest">NYU Langone Brooklyn</span></div>
+            <div class="cs-row"><span class="cs-label">Date & Time</span><span class="cs-value" id="cs-time">Wed Apr 9 · 10:00 AM</span></div>
+            <div class="cs-row"><span class="cs-label">Vehicle</span><span class="cs-value" id="cs-type">🚗 Standard</span></div>
+            <div class="cs-row"><span class="cs-label">Insurance</span><span class="cs-value" id="cs-ins">Medicaid</span></div>
+          </div>
+          <div class="price-estimate">
+            <div><div class="pe-label">Estimated Cost</div><div class="pe-price">$0.00</div><div class="pe-covered">✓ Covered by Medicaid</div></div>
+            <div style="text-align:right"><div style="font-size:11px;opacity:.7">Est. distance</div><div style="font-size:18px;font-weight:700">4.2 mi</div></div>
+          </div>
+          <button class="btn btn-sky" onclick="confirmRideRequest()">Confirm Ride Request 🚐</button>
+        </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ SEARCHING ═══════════ -->
+      <div class="screen" id="s-m-searching" style="background:var(--slate-900)">
+        <div class="search-anim" style="margin:60px auto 0">
+          <div class="search-ring"></div><div class="search-ring"></div><div class="search-ring"></div>
+          <div class="search-center">🚐</div>
+        </div>
+        <div style="padding:28px 24px;text-align:center">
+          <div class="search-title">Finding Your Driver</div>
+          <div class="search-sub">Matching you with a verified NEMT driver in your area</div>
+          <div class="search-progress"><div class="search-bar"></div></div>
+          <div class="search-status"><div class="blink-dot"></div> Checking 12 nearby drivers…</div>
+          <div style="margin-top:20px;background:rgba(255,255,255,.06);border-radius:14px;padding:14px 16px;text-align:left">
+            <div style="font-size:11px;color:var(--slate-400);font-weight:700;letter-spacing:.5px;margin-bottom:10px">MATCHING CRITERIA</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--slate-300)"><span style="color:var(--emerald)">✓</span> Medicaid-authorized driver</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--slate-300)"><span style="color:var(--emerald)">✓</span> Valid NEMT certification</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--slate-300)"><span style="color:var(--emerald)">✓</span> Background check cleared</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--slate-300);"><span class="blink-dot" style="width:6px;height:6px;margin-right:2px"></span> Within 2 miles of pickup</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER MATCHED ═══════════ -->
+      <div class="screen" id="s-m-matched" style="background:var(--slate-50)">
+        <div class="matched-header">
+          <div style="font-size:40px;margin-bottom:10px">🎉</div>
+          <div class="matched-title">Driver Found!</div>
+          <div class="matched-sub">Your verified NEMT driver is on the way</div>
+        </div>
+        <div class="driver-profile-card">
+          <div class="dpc-header">
+            <div class="dpc-avatar">C<div class="dpc-verified">✓</div></div>
+            <div>
+              <div class="dpc-name">Carlos Rivera</div>
+              <div class="dpc-rating">⭐ 4.97 <span style="color:var(--slate-400);font-size:11px;font-weight:400">(1,284 trips)</span></div>
+              <div class="dpc-trips">NEMT Certified · 5 years experience</div>
+            </div>
+          </div>
+          <div class="dpc-vehicle">
+            <div class="dpc-vehicle-row">
+              <div class="dpc-vehicle-name">2022 Toyota Sienna · Blue</div>
+              <div class="dpc-plate">ABC-1234</div>
+            </div>
+            <div class="dpc-vehicle-meta">Wheelchair Accessible · Lift Equipped · 7-seater</div>
+          </div>
+          <div class="dpc-badges">
+            <span class="tag tag-green">✓ NEMT Certified</span>
+            <span class="tag tag-sky">✓ Medicaid Auth.</span>
+            <span class="tag tag-violet">✓ Background Clear</span>
+            <span class="tag tag-amber">CPR Certified</span>
+          </div>
+          <div class="dpc-actions">
+            <button class="dpc-action dpc-action-call">📞 Call Driver</button>
+            <button class="dpc-action dpc-action-msg">💬 Message</button>
+          </div>
+        </div>
+        <div class="eta-banner">
+          <div><div class="eta-label">ETA to pickup</div><div class="eta-dist" id="matched-dist">1.4 miles away</div></div>
+          <div style="text-align:right"><div class="eta-value" id="matched-eta">8</div><div class="eta-unit">min</div></div>
+        </div>
+        <div style="padding:4px 14px 16px">
+          <button class="btn btn-sky" onclick="startFullRideSim()">📍 Track Driver Live →</button>
+        </div>
+      </div>
+
+      <!-- ═══════════ MEMBER TRACKING ═══════════ -->
+      <div class="screen map-screen" id="s-m-tracking">
+        <div id="member-map" style="position:absolute;inset:0;z-index:0"></div>
+        <!-- top status pill -->
+        <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:500">
+          <div class="map-status-pill" id="m-status-pill">🚗 Driver En Route</div>
+        </div>
+        <div class="map-overlay-bottom" id="mob">
+          <div class="mob-driver">
+            <div class="mob-driver-av">C</div>
+            <div>
+              <div class="mob-driver-name">Carlos Rivera</div>
+              <div class="mob-driver-vehicle" id="mob-status-text">En route to your pickup</div>
+            </div>
+            <div class="mob-eta">
+              <div class="mob-eta-val" id="mob-eta">8</div>
+              <div class="mob-eta-label">MIN AWAY</div>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden;margin-bottom:14px">
+            <div id="m-progress-bar" style="height:100%;background:var(--transport-grad);width:10%;transition:width 1.5s ease"></div>
+          </div>
+          <div class="mob-actions">
+            <button class="mob-btn" style="background:var(--emerald-light);color:var(--emerald-dark)">📞 Call</button>
+            <button class="mob-btn" style="background:var(--sky-light);color:var(--sky-dark)">💬 Text</button>
+            <button class="mob-btn btn-red" style="background:var(--red-light);color:var(--red)" onclick="showToast('❌','Ride Cancelled','Cancellation confirmed')">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ MEMBER COMPLETE ═══════════ -->
+      <div class="screen" id="s-m-complete" style="background:var(--slate-50)">
+        <div class="complete-header">
+          <div class="complete-icon">🎉</div>
+          <div class="complete-title">You've Arrived!</div>
+          <div class="complete-sub">NYU Langone Brooklyn · Nephrology Dept</div>
+        </div>
+        <div class="rating-card">
+          <div class="rating-label">How was your ride with Carlos?</div>
+          <div class="stars" id="star-row">
+            <span class="star active" onclick="rateStar(1)">⭐</span>
+            <span class="star active" onclick="rateStar(2)">⭐</span>
+            <span class="star active" onclick="rateStar(3)">⭐</span>
+            <span class="star active" onclick="rateStar(4)">⭐</span>
+            <span class="star active" onclick="rateStar(5)">⭐</span>
+          </div>
+          <div class="trip-summary">
+            <div class="ts-row"><span class="ts-label">Pickup</span><span class="ts-value">123 Ocean Ave</span></div>
+            <div class="ts-row"><span class="ts-label">Destination</span><span class="ts-value">NYU Langone Brooklyn</span></div>
+            <div class="ts-row"><span class="ts-label">Duration</span><span class="ts-value">24 min</span></div>
+            <div class="ts-row"><span class="ts-label">Distance</span><span class="ts-value">4.2 miles</span></div>
+            <div class="ts-row"><span class="ts-label">Driver</span><span class="ts-value">Carlos Rivera ⭐ 4.97</span></div>
+            <div class="ts-row"><span class="ts-label">Cost to You</span><span class="ts-value" style="color:var(--emerald-dark)">$0.00 ✓ Covered</span></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Comments (optional)</label>
+            <input class="form-input" type="text" placeholder="Great driver, very helpful…">
+          </div>
+        </div>
+        <div style="padding:4px 14px 24px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-sky" onclick="showToast('⭐','Review Submitted!','Thank you for your feedback');gotoScreen('s-m-home')">Submit Review ⭐</button>
+          <button class="btn btn-ghost" onclick="gotoScreen('s-m-home')">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER LOGIN ═══════════ -->
+      <div class="screen" id="s-d-login">
+        <div style="flex:1;background:var(--slate-900);display:flex;flex-direction:column;padding:32px 24px;justify-content:center">
+          <div class="d-login-logo">
+            <div style="font-size:40px;margin-bottom:12px">🚗</div>
+            <div style="font-size:22px;font-weight:800;color:white;text-align:center">Driver Portal</div>
+            <div style="font-size:13px;color:var(--slate-400);text-align:center;margin-top:4px">Validated NEMT drivers only</div>
+          </div>
+          <div class="login-box">
+            <input class="login-field" type="text" placeholder="Driver ID (e.g. DRV-101)" id="d-id-input">
+            <input class="login-field" type="password" placeholder="Password">
+            <button class="login-btn" style="background:var(--driver-grad)" onclick="driverLogin()">Sign In →</button>
+          </div>
+          <div class="login-demo" style="margin-top:14px">
+            Demo: <span onclick="document.getElementById('d-id-input').value='DRV-101';driverLogin()">Use DRV-101</span> · <span onclick="document.getElementById('d-id-input').value='DRV-202';driverLogin()">New Driver</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER ONBOARDING ═══════════ -->
+      <div class="screen" id="s-d-onboard">
+        <div class="ph">
+          <span class="ph-back" onclick="gotoScreen('s-d-login')">‹</span>
+          <div><div class="ph-title">Driver Validation</div><div class="ph-sub" id="onboard-label">Step 1 of 5 — License & Identity</div></div>
+        </div>
+        <div class="step-bar">
+          <div class="step-dot active" id="odot-1">1</div>
+          <div class="step-line" id="oline-1"></div>
+          <div class="step-dot pending" id="odot-2">2</div>
+          <div class="step-line" id="oline-2"></div>
+          <div class="step-dot pending" id="odot-3">3</div>
+          <div class="step-line" id="oline-3"></div>
+          <div class="step-dot pending" id="odot-4">4</div>
+          <div class="step-line" id="oline-4"></div>
+          <div class="step-dot pending" id="odot-5">5</div>
+        </div>
+        <div style="flex:1;overflow-y:auto;scrollbar-width:none">
+        <!-- Step 1: License -->
+        <div class="onboard-step active" id="ob-step-1">
+          <div class="onboard-step-title">🪪 Driver's License</div>
+          <div class="onboard-step-sub">Upload a clear photo of your valid driver's license</div>
+          <div class="upload-zone" id="lic-upload" onclick="fakeUpload('lic-upload','lic-upload-text','📋 License uploaded — NY-DL-4892017')">
+            <input type="file" accept="image/*">
+            <div class="upload-icon">🪪</div>
+            <div class="upload-text" id="lic-upload-text">Tap to upload license photo</div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">License Number</label><input class="form-input" placeholder="e.g. NY123456789" value="NY-DL-4892017" style="font-family:'JetBrains Mono',monospace"></div>
+            <div class="form-group"><label class="form-label">Expiry Date</label><input class="form-input" type="date" value="2027-08-15"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">License State</label>
+              <select class="form-select"><option>New York</option><option>New Jersey</option><option>Connecticut</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">License Class</label>
+              <select class="form-select"><option>Class D (Standard)</option><option>Class C (NEMT)</option><option>CDL-B</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Full Legal Name</label><input class="form-input" placeholder="As it appears on license" value="Carlos Antonio Rivera"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" type="date" value="1988-03-14"></div>
+            <div class="form-group"><label class="form-label">SSN (Last 4)</label><input class="form-input" placeholder="●●●●" maxlength="4" value="7291" style="font-family:'JetBrains Mono',monospace"></div>
+          </div>
+          <button class="btn btn-green" onclick="advanceOnboardStep()">Next: Vehicle Info →</button>
+        </div>
+        <!-- Step 2: Vehicle -->
+        <div class="onboard-step" id="ob-step-2">
+          <div class="onboard-step-title">🚐 Vehicle Information</div>
+          <div class="onboard-step-sub">Tell us about the vehicle you'll use for NEMT trips</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Make</label><input class="form-input" placeholder="e.g. Toyota" value="Toyota"></div>
+            <div class="form-group"><label class="form-label">Model</label><input class="form-input" placeholder="e.g. Sienna" value="Sienna"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Year</label><input class="form-input" placeholder="e.g. 2022" value="2022"></div>
+            <div class="form-group"><label class="form-label">Color</label><input class="form-input" placeholder="e.g. Blue" value="Blue"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">License Plate</label><input class="form-input" placeholder="Plate #" value="ABC-1234" style="font-family:'JetBrains Mono',monospace"></div>
+            <div class="form-group"><label class="form-label">State</label><select class="form-select"><option>NY</option><option>NJ</option><option>CT</option></select></div>
+          </div>
+          <div class="form-group"><label class="form-label">VIN</label><input class="form-input" placeholder="17-digit VIN" value="1NXBR32E07Z123456" style="font-family:'JetBrains Mono',monospace;font-size:12px"></div>
+          <div class="form-group"><label class="form-label">Vehicle Type</label>
+            <div class="ride-type-grid">
+              <div class="ride-type-card selected" id="vt-sedan" onclick="selectVehicleType('sedan')"><div class="icon">🚗</div><div class="name">Sedan/SUV</div></div>
+              <div class="ride-type-card" id="vt-van" onclick="selectVehicleType('van')"><div class="icon">🚐</div><div class="name">Minivan</div></div>
+              <div class="ride-type-card" id="vt-wav" onclick="selectVehicleType('wav')"><div class="icon">♿</div><div class="name">WAV</div></div>
+              <div class="ride-type-card" id="vt-amb" onclick="selectVehicleType('amb')"><div class="icon">🚑</div><div class="name">Ambulette</div></div>
+            </div>
+          </div>
+          <div class="upload-zone" id="veh-upload" onclick="fakeUpload('veh-upload','veh-upload-text','🚐 Registration card uploaded')">
+            <input type="file" accept="image/*">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text" id="veh-upload-text">Upload vehicle registration card</div>
+          </div>
+          <button class="btn btn-green" onclick="advanceOnboardStep()">Next: Insurance →</button>
+        </div>
+        <!-- Step 3: Insurance -->
+        <div class="onboard-step" id="ob-step-3">
+          <div class="onboard-step-title">🛡 Insurance Verification</div>
+          <div class="onboard-step-sub">NEMT drivers must carry commercial vehicle insurance</div>
+          <div class="card" style="background:#fef9c3;border:1px solid #fde68a;margin:0 0 14px">
+            <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px">⚠️ Requirements</div>
+            <div style="font-size:12px;color:#78350f;line-height:1.5">• Minimum $1,000,000 liability coverage<br>• Commercial vehicle policy (not personal)<br>• Must list NEMT operation as use type</div>
+          </div>
+          <div class="upload-zone" id="ins-upload" onclick="fakeUpload('ins-upload','ins-upload-text','🛡 Insurance card uploaded')">
+            <input type="file" accept="image/*">
+            <div class="upload-icon">🛡</div>
+            <div class="upload-text" id="ins-upload-text">Upload insurance card (front)</div>
+          </div>
+          <div class="form-group"><label class="form-label">Insurance Provider</label><input class="form-input" placeholder="e.g. Geico Commercial" value="Progressive Commercial"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Policy Number</label><input class="form-input" value="COM-8821934" style="font-family:'JetBrains Mono',monospace;font-size:12px"></div>
+            <div class="form-group"><label class="form-label">Expiry</label><input class="form-input" type="date" value="2026-03-01"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Coverage Amount</label><input class="form-input" value="$1,500,000"></div>
+            <div class="form-group"><label class="form-label">Policy Type</label><select class="form-select"><option>Commercial</option><option>Hybrid</option></select></div>
+          </div>
+          <button class="btn btn-green" onclick="advanceOnboardStep()">Next: Certifications →</button>
+        </div>
+        <!-- Step 4: Background + Certs -->
+        <div class="onboard-step" id="ob-step-4">
+          <div class="onboard-step-title">🔍 Background & Certifications</div>
+          <div class="onboard-step-sub">Required for all NEMT drivers</div>
+          <div class="validation-status vs-approved" id="bgc-status" style="margin-bottom:14px">
+            <div class="vs-icon">✅</div>
+            <div class="vs-title">Background Check: Cleared</div>
+            <div class="vs-sub">Criminal · Sex Offender Registry · MVR — All Clear</div>
+            <div style="font-size:10px;color:#064e3b;margin-top:6px;font-family:'JetBrains Mono',monospace">Ref: BGC-2025-CR-49012 · Processed Apr 2, 2025</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--slate-700);margin-bottom:10px">Required Certifications</div>
+          <div class="check-grid">
+            <div class="check-item checked" id="cert-cpr" onclick="toggleCheck(this)">
+              <div class="check-box">✓</div>
+              <div>
+                <div class="check-text">CPR / First Aid Certified</div>
+                <div style="font-size:10px;color:var(--emerald-dark)">Expires: Jun 2026</div>
+              </div>
+            </div>
+            <div class="check-item checked" id="cert-nemt" onclick="toggleCheck(this)">
+              <div class="check-box">✓</div>
+              <div>
+                <div class="check-text">NEMT Driver Training (8hr)</div>
+                <div style="font-size:10px;color:var(--emerald-dark)">Completed: Jan 2025</div>
+              </div>
+            </div>
+            <div class="check-item checked" id="cert-hipaa" onclick="toggleCheck(this)">
+              <div class="check-box">✓</div>
+              <div>
+                <div class="check-text">HIPAA Compliance Training</div>
+                <div style="font-size:10px;color:var(--emerald-dark)">Completed: Jan 2025</div>
+              </div>
+            </div>
+            <div class="check-item" id="cert-defensive" onclick="toggleCheck(this)">
+              <div class="check-box"></div>
+              <div>
+                <div class="check-text">Defensive Driving Course</div>
+                <div style="font-size:10px;color:var(--slate-400)">Optional but recommended</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--slate-700);margin:14px 0 10px">Upload Certificates</div>
+          <div class="upload-zone" id="cert-upload" onclick="fakeUpload('cert-upload','cert-upload-text','📋 CPR & NEMT certificates uploaded')">
+            <input type="file" accept="image/*,.pdf" multiple>
+            <div class="upload-icon">📋</div>
+            <div class="upload-text" id="cert-upload-text">Upload CPR card & NEMT certificate (PDF/image)</div>
+          </div>
+          <button class="btn btn-green" onclick="advanceOnboardStep()">Next: Vehicle Inspection →</button>
+        </div>
+        <!-- Step 5: Inspection -->
+        <div class="onboard-step" id="ob-step-5">
+          <div class="onboard-step-title">🔧 Vehicle Inspection</div>
+          <div class="onboard-step-sub">Complete this 10-point safety checklist before every shift</div>
+          <div class="check-grid" id="inspection-checklist">
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Brakes — functional, no grinding</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Tires — adequate tread, no flats</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Lights — headlights, tail, blinkers OK</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Seatbelts — all rows functional</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Wheelchair lift / ramp tested</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Interior — clean, sanitized</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">First aid kit — stocked</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Fire extinguisher — present</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">GPS / phone mount — secured</div></div>
+            <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Driver ID badge — visible</div></div>
+          </div>
+          <div style="margin-top:14px" id="inspection-progress-wrap">
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--slate-500);margin-bottom:6px">
+              <span>Inspection Progress</span><span id="inspection-count">0 / 10</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="inspection-bar" style="width:0%"></div></div>
+          </div>
+          <button class="btn btn-green" style="margin-top:14px" id="inspection-submit-btn" onclick="finishOnboarding()">Complete Validation ✓</button>
+        </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER HOME ═══════════ -->
+      <div class="screen" id="s-d-home" style="background:var(--slate-900)">
+        <div class="d-home-header">
+          <div class="d-home-top">
+            <div><div class="d-home-greeting">Good morning, Carlos 👋</div><div class="d-home-id">Driver ID: DRV-101 · Brooklyn, NY</div></div>
+            <div class="d-avatar">C</div>
+          </div>
+          <div class="availability-toggle">
+            <div><div class="at-label" id="avail-label">Go Online</div><div class="at-sub" id="avail-sub">You're currently offline</div></div>
+            <div class="toggle-switch" id="avail-toggle" onclick="toggleAvailability()">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+        </div>
+        <div class="d-home-body">
+          <div class="stats-row">
+            <div class="stat-box"><div class="stat-val">$186</div><div class="stat-label">Today</div></div>
+            <div class="stat-box"><div class="stat-val">8</div><div class="stat-label">Trips</div></div>
+            <div class="stat-box"><div class="stat-val">4.97</div><div class="stat-label">Rating</div></div>
+          </div>
+          <div class="validation-bar">
+            <div class="vb-icon">✅</div>
+            <div><div class="vb-title">Validation Complete</div><div class="vb-sub">License · Insurance · Inspection · Background — All Cleared</div></div>
+          </div>
+          <div class="section-h" style="color:var(--slate-500)">Today's Trips</div>
+          <div style="margin:0 14px 10px;background:white;border-radius:var(--r);border:1px solid var(--slate-200)">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--slate-100);cursor:pointer" onclick="gotoScreen('s-d-incoming');startAcceptTimer()">
+              <div style="width:38px;height:38px;border-radius:12px;background:var(--sky-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔔</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate-800)">Incoming: Maria Johnson</div><div style="font-size:11px;color:var(--slate-400)">10:00 AM · 123 Ocean Ave → NYU Langone</div></div>
+              <span class="tag tag-amber">New</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--slate-100)">
+              <div style="width:38px;height:38px;border-radius:12px;background:var(--emerald-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✅</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate-800)">James Williams — Completed</div><div style="font-size:11px;color:var(--slate-400)">8:30 AM · Methodist Hospital</div></div>
+              <span class="tag tag-green">+$24</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 14px">
+              <div style="width:38px;height:38px;border-radius:12px;background:var(--emerald-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✅</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate-800)">Patricia Chen — Completed</div><div style="font-size:11px;color:var(--slate-400)">7:00 AM · Dr. Singh Primary Care</div></div>
+              <span class="tag tag-green">+$18</span>
+            </div>
+          </div>
+          <div class="section-h" style="color:var(--slate-500)">Validation Status</div>
+          <div style="margin:0 14px 24px;background:white;border-radius:var(--r);border:1px solid var(--slate-200);padding:14px">
+            <div class="val-item"><span class="val-item-icon">🪪</span><span class="val-item-label">Driver's License</span><span class="val-item-status val-ok">✓ Verified</span></div>
+            <div class="val-item"><span class="val-item-icon">🚐</span><span class="val-item-label">Vehicle Registration</span><span class="val-item-status val-ok">✓ Verified</span></div>
+            <div class="val-item"><span class="val-item-icon">🛡</span><span class="val-item-label">Insurance</span><span class="val-item-status val-ok">✓ Verified</span></div>
+            <div class="val-item"><span class="val-item-icon">🔍</span><span class="val-item-label">Background Check</span><span class="val-item-status val-ok">✓ Cleared</span></div>
+            <div class="val-item"><span class="val-item-icon">🏥</span><span class="val-item-label">NEMT Certification</span><span class="val-item-status val-ok">✓ Active</span></div>
+            <div class="val-item"><span class="val-item-icon">🔧</span><span class="val-item-label">Vehicle Inspection</span><span class="val-item-status val-ok">✓ Today</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ INCOMING RIDE ═══════════ -->
+      <div class="screen" id="s-d-incoming" style="background:var(--slate-50)">
+        <div class="incoming-header">
+          <div class="incoming-badge">New ride request</div>
+          <div class="incoming-title">Ride Request</div>
+          <div style="font-size:13px;opacity:.8;margin-bottom:6px">4.2 miles · Est. 24 min trip</div>
+          <div class="incoming-earnings">💵 Est. $22–26</div>
+        </div>
+        <div class="ride-detail-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+            <div class="ride-route">
+              <div class="route-dot pickup"></div>
+              <div class="route-label">PICKUP</div>
+              <div class="route-value">123 Ocean Ave, Brooklyn, NY 11218</div>
+              <div class="route-line"></div>
+              <div class="route-dot dest" style="top:44px"></div>
+              <div class="route-label">DROPOFF</div>
+              <div class="route-value" style="margin-bottom:0">NYU Langone Brooklyn, 150 55th St</div>
+            </div>
+            <div class="timer-ring">
+              <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="28" cy="28" r="24" stroke="#e2e8f0" stroke-width="4"/>
+                <circle cx="28" cy="28" r="24" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="150.796" id="timer-arc" stroke-dashoffset="0" stroke-linecap="round"/>
+              </svg>
+              <div class="timer-num" id="timer-num">30</div>
+            </div>
+          </div>
+          <div class="member-preview">
+            <div class="mp-avatar">👩</div>
+            <div>
+              <div class="mp-name">Maria Johnson</div>
+              <div class="mp-insurance">🏛 Medicaid · NY-0045-2891</div>
+              <div class="mp-special">♿ May need assistance boarding</div>
+            </div>
+            <div style="margin-left:auto;text-align:right">
+              <div style="font-size:13px;font-weight:700;color:var(--emerald-dark)">4.9 ⭐</div>
+              <div style="font-size:10px;color:var(--slate-400)">member rating</div>
+            </div>
+          </div>
+          <div class="ride-meta-row">
+            <div class="rmd"><span>🚗</span> Standard Vehicle</div>
+            <div class="rmd"><span>📅</span> Today 10:00 AM</div>
+            <div class="rmd"><span>↔️</span> 4.2 mi trip</div>
+            <div class="rmd"><span>🏛</span> Medicaid Auth.</div>
+          </div>
+          <div class="accept-decline">
+            <button class="btn btn-ghost btn-sm" style="flex:1;color:var(--red)" onclick="declineRide()">✕ Decline</button>
+            <button class="btn btn-green" style="flex:2" onclick="acceptRide()">✓ Accept Ride</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER NAVIGATE TO PICKUP ═══════════ -->
+      <div class="screen map-screen" id="s-d-navigate">
+        <div id="driver-nav-map" style="position:absolute;inset:0;z-index:0"></div>
+        <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:500">
+          <div class="map-status-pill" style="background:var(--driver-grad)">🚗 En Route to Pickup</div>
+        </div>
+        <div class="driver-map-overlay">
+          <div class="nav-phase-badge nav-phase-pickup">📍 Heading to Pickup</div>
+          <div class="nav-info">
+            <div class="nav-dest">123 Ocean Ave, Brooklyn</div>
+            <div class="nav-eta-box">
+              <div class="nav-eta-val" id="d-pickup-eta">6</div>
+              <div class="nav-eta-unit">MIN</div>
+              <div class="nav-dist" id="d-pickup-dist">0.8 mi away</div>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden;margin-bottom:14px">
+            <div id="d-nav-progress" style="height:100%;background:var(--driver-grad);width:15%;transition:width 1.5s ease"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="showToast('📞','Calling Maria...','Member contacted')">📞 Call Member</button>
+            <button class="btn btn-green btn-sm" style="flex:2" onclick="driverArrivesAtPickup()">✓ I've Arrived</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ VERIFY MEMBER ═══════════ -->
+      <div class="screen" id="s-d-verify" style="background:var(--slate-50)">
+        <div class="ph">
+          <div style="flex:1"><div class="ph-title">Verify Member</div><div class="ph-sub">Confirm passenger identity before departing</div></div>
+        </div>
+        <div class="verify-card">
+          <div class="qr-mock">📱</div>
+          <div class="verify-member-info">
+            <div class="vm-name">Maria Johnson</div>
+            <div class="vm-id">ID: MB-1001 · DOB: 01/15/1968</div>
+            <div class="vm-insurance">🏛 Medicaid · NY-0045-2891</div>
+          </div>
+          <div class="verify-checklist" id="verify-checklist">
+            <div class="vc-item" onclick="doVerifyCheck(this)"><div class="vc-check"></div><div class="vc-text">Confirm member name matches ID</div></div>
+            <div class="vc-item" onclick="doVerifyCheck(this)"><div class="vc-check"></div><div class="vc-text">Confirm date of birth</div></div>
+            <div class="vc-item" onclick="doVerifyCheck(this)"><div class="vc-check"></div><div class="vc-text">Verify Medicaid card / insurance</div></div>
+            <div class="vc-item" onclick="doVerifyCheck(this)"><div class="vc-check"></div><div class="vc-text">Member safely seated / secured</div></div>
+            <div class="vc-item" onclick="doVerifyCheck(this)"><div class="vc-check"></div><div class="vc-text">Note any mobility aids / equipment</div></div>
+          </div>
+          <button class="btn btn-green" id="start-trip-btn" onclick="startDriverTransit()">🚗 Start Trip →</button>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER EN ROUTE TO DEST ═══════════ -->
+      <div class="screen map-screen" id="s-d-transit">
+        <div id="driver-transit-map" style="position:absolute;inset:0;z-index:0"></div>
+        <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:500">
+          <div class="map-status-pill" style="background:linear-gradient(135deg,#059669,#0ea5e9)">🏥 En Route to Destination</div>
+        </div>
+        <div class="driver-map-overlay">
+          <div class="nav-phase-badge nav-phase-transit">🏥 To Destination</div>
+          <div class="nav-info">
+            <div class="nav-dest">NYU Langone Brooklyn, 150 55th St</div>
+            <div class="nav-eta-box">
+              <div class="nav-eta-val" id="d-dest-eta">14</div>
+              <div class="nav-eta-unit">MIN</div>
+              <div class="nav-dist" id="d-dest-dist">3.4 mi away</div>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden;margin-bottom:14px">
+            <div id="d-transit-progress" style="height:100%;background:linear-gradient(135deg,#059669,#0ea5e9);width:5%;transition:width 1.5s ease"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" style="flex:1">🚨 Emergency</button>
+            <button class="btn btn-green btn-sm" style="flex:2" onclick="completeTrip()">✓ Trip Complete</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ DRIVER COMPLETE ═══════════ -->
+      <div class="screen" id="s-d-complete" style="background:var(--slate-50)">
+        <div class="d-complete-header">
+          <div style="font-size:48px;margin-bottom:10px">✅</div>
+          <div style="font-size:22px;font-weight:800;color:white;margin-bottom:4px">Trip Complete!</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.8)">Great job, Carlos!</div>
+        </div>
+        <div class="d-complete-card">
+          <div class="earnings-display">
+            <div class="ed-label">Trip Earnings</div>
+            <div class="ed-earned">$24.50</div>
+            <div class="ed-breakdown">
+              <div class="ed-item">Base: <strong>$18.00</strong></div>
+              <div class="ed-item">Mileage: <strong>$5.04</strong></div>
+              <div class="ed-item">Tip: <strong>$1.46</strong></div>
+            </div>
+          </div>
+          <div class="trip-summary">
+            <div class="ts-row"><span class="ts-label">Member</span><span class="ts-value">Maria Johnson</span></div>
+            <div class="ts-row"><span class="ts-label">Route</span><span class="ts-value">Ocean Ave → NYU Langone</span></div>
+            <div class="ts-row"><span class="ts-label">Distance</span><span class="ts-value">4.2 miles</span></div>
+            <div class="ts-row"><span class="ts-label">Duration</span><span class="ts-value">24 min</span></div>
+            <div class="ts-row"><span class="ts-label">Insurance</span><span class="ts-value">Medicaid · Authorized ✓</span></div>
+          </div>
+          <div style="background:var(--driver-grad);border-radius:12px;padding:12px 14px;color:white;text-align:center;margin-bottom:14px">
+            <div style="font-size:11px;opacity:.8;margin-bottom:4px">Today's Total Earnings</div>
+            <div style="font-size:28px;font-weight:800">$210.50</div>
+            <div style="font-size:12px;opacity:.8">9 trips completed</div>
+          </div>
+        </div>
+        <div style="padding:4px 14px 24px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-green" onclick="gotoScreen('s-d-home')">Back to Dashboard →</button>
+        </div>
+      </div>
+
+    </div><!-- end screen-wrap -->
+
+    <!-- BOTTOM NAV (member) -->
+    <div class="bottom-nav" id="bottom-nav">
+      <div class="bni active" id="bn-home" onclick="gotoScreen('s-m-home');setBN('bn-home')"><span class="icon">🏠</span>Home</div>
+      <div class="bni" id="bn-rides" onclick="gotoScreen('s-m-request');reqStep=1;showReqStep(1);setBN('bn-rides')"><span class="icon">🚐</span>Book</div>
+      <div class="bni" id="bn-track" onclick="startFullRideSim();setBN('bn-track')"><span class="icon">📍</span>Track</div>
+      <div class="bni" id="bn-history" onclick="gotoScreen('s-m-home');setBN('bn-history')"><span class="icon">📋</span>History</div>
+      <div class="bni" id="bn-ai" onclick="openAIDispatch()"><span class="icon">🤖</span>AI</div>
+    </div>
+
+  </div><!-- end phone -->
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let currentScreen = 's-welcome';
+let reqStep = 1;
+let onboardStep = 1;
+let selectedRideType = 'standard';
+let selectedVehicleType = 'sedan';
+let selectedIns = 'medicaid';
+let roundTrip = true;
+let driverAvailable = false;
+let acceptTimer = null;
+let simTimer = null;
+let ratingValue = 5;
+let aiHistory = [];
+
+// GPS / Map state
+let memberMap = null, driverNavMap = null, driverTransitMap = null;
+let driverMarker = null, memberMarker = null, destMarker = null;
+let dNavDriverMarker = null, dNavMemberMarker = null, dNavDestMarker = null;
+let dTransitDriverMarker = null, dTransitMemberMarker = null, dTransitDestMarker = null;
+let routeLine = null, dNavRouteLine = null, dTransitRouteLine = null;
+let mapsInitialized = {member: false, driverNav: false, driverTransit: false};
+
+// Coordinates (Brooklyn, NY)
+let memberPos   = [40.6501, -73.9496]; // 123 Ocean Ave
+const destPos   = [40.6284, -74.0013]; // NYU Langone Brooklyn area
+let driverPos   = [40.6630, -73.9300]; // Driver starts ~1.5 mi away
+const driverStartPos = [40.6630, -73.9300];
+
+// ─────────────────────────────────────────────
+// SCREEN NAVIGATION
+// ─────────────────────────────────────────────
+const mapScreens = new Set(['s-m-tracking','s-d-navigate','s-d-transit']);
+
+function gotoScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const s = document.getElementById(id);
+  if (s) s.classList.add('active');
+  currentScreen = id;
+  // Status bar color
+  const statusBar = document.getElementById('status-bar');
+  const darkScreens = new Set(['s-welcome','s-m-login','s-d-login','s-m-searching']);
+  if (darkScreens.has(id)) {
+    statusBar.style.background = '#0f172a';
+    statusBar.style.color = '#94a3b8';
+  } else if (mapScreens.has(id)) {
+    statusBar.style.background = 'transparent';
+    statusBar.style.color = '#1e293b';
+    statusBar.style.position = 'absolute';
+    statusBar.style.zIndex = '600';
+    statusBar.style.width = '100%';
+  } else {
+    statusBar.style.background = 'white';
+    statusBar.style.color = '#1e293b';
+    statusBar.style.position = 'relative';
+    statusBar.style.zIndex = '';
+    statusBar.style.width = '';
+  }
+  // Hide/show bottom nav
+  const bn = document.getElementById('bottom-nav');
+  const memberScreens = ['s-m-home','s-m-request','s-m-matched','s-m-tracking','s-m-complete'];
+  bn.style.display = memberScreens.includes(id) ? 'flex' : 'none';
+  // Hide FAB on dark/map screens
+  const fab = document.getElementById('ai-fab');
+  fab.style.display = (darkScreens.has(id) || mapScreens.has(id)) ? 'none' : 'flex';
+  // Init maps lazily
+  if (id === 's-m-tracking' && !mapsInitialized.member) setTimeout(initMemberMap, 100);
+  else if (id === 's-m-tracking') setTimeout(() => memberMap && memberMap.invalidateSize(), 100);
+  if (id === 's-d-navigate' && !mapsInitialized.driverNav) setTimeout(initDriverNavMap, 100);
+  else if (id === 's-d-navigate') setTimeout(() => driverNavMap && driverNavMap.invalidateSize(), 100);
+  if (id === 's-d-transit' && !mapsInitialized.driverTransit) setTimeout(initDriverTransitMap, 100);
+  else if (id === 's-d-transit') setTimeout(() => driverTransitMap && driverTransitMap.invalidateSize(), 100);
+}
+
+function setSBI(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+function setBN(id) {
+  document.querySelectorAll('.bni').forEach(i => i.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+// PORTAL VIEW TOGGLE (sidebar)
+// ─────────────────────────────────────────────
+function togglePortalView(role) {
+  document.getElementById('vt-member').classList.toggle('active', role === 'member');
+  document.getElementById('vt-driver').classList.toggle('active', role === 'driver');
+  if (role === 'member') gotoScreen('s-m-home');
+  else gotoScreen('s-d-home');
+}
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+let toastTimer = null;
+function showToast(icon, title, sub) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-sub').textContent = sub;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ─────────────────────────────────────────────
+// LEAFLET MAPS
+// ─────────────────────────────────────────────
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OSM</a>';
+
+function carIcon(color='#0ea5e9') {
+  return L.divIcon({className:'',iconSize:[40,40],iconAnchor:[20,20],
+    html:`<div style="background:${color};border:3px solid white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(0,0,0,.3)">🚗</div>`});
+}
+function personIcon(color='#7c3aed') {
+  return L.divIcon({className:'',iconSize:[40,40],iconAnchor:[20,40],
+    html:`<div style="background:${color};border:3px solid white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(0,0,0,.3)">👤</div>`});
+}
+function hospitalIcon() {
+  return L.divIcon({className:'',iconSize:[40,40],iconAnchor:[20,40],
+    html:`<div style="background:#ef4444;border:3px solid white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(0,0,0,.3)">🏥</div>`});
+}
+
+function initMemberMap() {
+  mapsInitialized.member = true;
+  memberMap = L.map('member-map', {zoomControl:false, attributionControl:false}).setView(memberPos, 14);
+  L.tileLayer(TILE_URL, {attribution:TILE_ATTR, maxZoom:19}).addTo(memberMap);
+  memberMarker = L.marker(memberPos, {icon: personIcon()}).addTo(memberMap).bindPopup('Your pickup location');
+  destMarker = L.marker(destPos, {icon: hospitalIcon()}).addTo(memberMap).bindPopup('NYU Langone Brooklyn');
+  driverMarker = L.marker(driverPos, {icon: carIcon()}).addTo(memberMap).bindPopup('Carlos - Your Driver');
+  routeLine = L.polyline([driverPos, memberPos], {color:'#0ea5e9',weight:3,dashArray:'8,8',opacity:.7}).addTo(memberMap);
+  memberMap.fitBounds(L.latLngBounds([memberPos, driverPos]), {padding:[40,40]});
+}
+
+function initDriverNavMap() {
+  mapsInitialized.driverNav = true;
+  driverNavMap = L.map('driver-nav-map', {zoomControl:false, attributionControl:false}).setView(driverPos, 14);
+  L.tileLayer(TILE_URL, {attribution:TILE_ATTR, maxZoom:19}).addTo(driverNavMap);
+  dNavMemberMarker = L.marker(memberPos, {icon: personIcon()}).addTo(driverNavMap).bindPopup('Maria Johnson - Pickup');
+  dNavDriverMarker = L.marker(driverPos, {icon: carIcon('#059669')}).addTo(driverNavMap);
+  dNavRouteLine = L.polyline([driverPos, memberPos], {color:'#059669',weight:4,dashArray:'10,6',opacity:.8}).addTo(driverNavMap);
+  driverNavMap.fitBounds(L.latLngBounds([memberPos, driverPos]), {padding:[50,50]});
+}
+
+function initDriverTransitMap() {
+  mapsInitialized.driverTransit = true;
+  driverTransitMap = L.map('driver-transit-map', {zoomControl:false, attributionControl:false}).setView(memberPos, 13);
+  L.tileLayer(TILE_URL, {attribution:TILE_ATTR, maxZoom:19}).addTo(driverTransitMap);
+  dTransitDriverMarker = L.marker(memberPos, {icon: carIcon('#059669')}).addTo(driverTransitMap);
+  dTransitDestMarker = L.marker(destPos, {icon: hospitalIcon()}).addTo(driverTransitMap).bindPopup('NYU Langone Brooklyn');
+  dTransitRouteLine = L.polyline([memberPos, destPos], {color:'#059669',weight:4,dashArray:'10,6',opacity:.8}).addTo(driverTransitMap);
+  driverTransitMap.fitBounds(L.latLngBounds([memberPos, destPos]), {padding:[50,50]});
+}
+
+// ─────────────────────────────────────────────
+// GPS SIMULATION
+// ─────────────────────────────────────────────
+let simPhase = 'to_pickup'; // 'to_pickup' | 'to_dest'
+let simProgress = 0;
+const SPEED = 0.00028;
+
+function startFullRideSim() {
+  gotoScreen('s-m-tracking');
+  setBN('bn-track');
+  driverPos = [...driverStartPos];
+  simPhase = 'to_pickup';
+  simProgress = 0;
+  if (simTimer) clearTimeout(simTimer);
+  // Try to get real GPS
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      memberPos = [pos.coords.latitude, pos.coords.longitude];
+      if (memberMarker) memberMarker.setLatLng(memberPos);
+      beginSimLoop();
+    }, () => beginSimLoop(), {timeout:3000});
+  } else {
+    beginSimLoop();
+  }
+}
+
+function beginSimLoop() {
+  if (!mapsInitialized.member) {
+    setTimeout(() => { initMemberMap(); setTimeout(simTick, 500); }, 300);
+  } else {
+    // Reset markers
+    if (driverMarker) driverMarker.setLatLng(driverPos);
+    if (memberMarker) memberMarker.setLatLng(memberPos);
+    if (routeLine) { routeLine.setLatLngs([driverPos, memberPos]); }
+    if (memberMap) memberMap.fitBounds(L.latLngBounds([memberPos, driverPos]), {padding:[40,40]});
+    simTick();
+  }
+}
+
+function simTick() {
+  const target = simPhase === 'to_pickup' ? memberPos : destPos;
+  const dlat = target[0] - driverPos[0];
+  const dlng = target[1] - driverPos[1];
+  const dist = Math.sqrt(dlat*dlat + dlng*dlng);
+
+  if (dist < 0.0003) {
+    if (simPhase === 'to_pickup') {
+      // Driver arrived at pickup
+      simPhase = 'to_dest';
+      simProgress = 0;
+      updateMemberTrackingUI('arrived');
+      showToast('🚗','Driver Arrived!','Carlos is outside. Please come down.');
+      if (routeLine) routeLine.setLatLngs([driverPos, destPos]);
+      if (memberMap) memberMap.setView(driverPos, 14);
+      simTimer = setTimeout(simTick, 2000);
+    } else {
+      // Arrived at destination
+      updateMemberTrackingUI('complete');
+      showToast('🎉','Arrived at Destination!','Trip complete. Please rate your driver.');
+      setTimeout(() => gotoScreen('s-m-complete'), 2500);
+    }
+    return;
+  }
+
+  const step = Math.min(SPEED, dist);
+  driverPos = [driverPos[0] + (dlat/dist)*step, driverPos[1] + (dlng/dist)*step];
+  simProgress = Math.min(simProgress + 4, 95);
+
+  // Update member map markers
+  if (memberMap) {
+    if (driverMarker) driverMarker.setLatLng(driverPos);
+    const midLat = (driverPos[0] + target[0]) / 2;
+    const midLng = (driverPos[1] + target[1]) / 2;
+    memberMap.setView([midLat, midLng], 14);
+  }
+  if (routeLine) routeLine.setLatLngs([driverPos, target]);
+
+  // Update ETAs
+  const distKm = dist * 111;
+  const etaMin = Math.max(1, Math.round(distKm / 0.5));
+  const distStr = distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)} mi`;
+
+  if (simPhase === 'to_pickup') {
+    document.getElementById('mob-eta').textContent = etaMin;
+    document.getElementById('m-progress-bar').style.width = simProgress + '%';
+    updateMemberTrackingUI('en_route');
+  } else {
+    document.getElementById('mob-eta').textContent = etaMin;
+    document.getElementById('m-progress-bar').style.width = simProgress + '%';
+    updateMemberTrackingUI('in_transit');
+  }
+
+  // Also update driver nav maps if initialized
+  if (mapsInitialized.driverNav && dNavDriverMarker) {
+    dNavDriverMarker.setLatLng(driverPos);
+    if (dNavRouteLine) dNavRouteLine.setLatLngs([driverPos, memberPos]);
+    document.getElementById('d-pickup-eta').textContent = etaMin;
+    document.getElementById('d-nav-progress').style.width = simProgress + '%';
+  }
+  if (mapsInitialized.driverTransit && dTransitDriverMarker && simPhase === 'to_dest') {
+    dTransitDriverMarker.setLatLng(driverPos);
+    if (dTransitRouteLine) dTransitRouteLine.setLatLngs([driverPos, destPos]);
+    document.getElementById('d-dest-eta').textContent = etaMin;
+    document.getElementById('d-transit-progress').style.width = simProgress + '%';
+  }
+
+  simTimer = setTimeout(simTick, 1200);
+}
+
+function updateMemberTrackingUI(phase) {
+  const pill = document.getElementById('m-status-pill');
+  const statusText = document.getElementById('mob-status-text');
+  const etaLabel = document.querySelector('#mob .mob-eta-label');
+  if (phase === 'en_route') { pill.textContent = '🚗 Driver En Route'; statusText.textContent = 'En route to your pickup'; if(etaLabel) etaLabel.textContent='MIN AWAY'; }
+  else if (phase === 'arrived') { pill.textContent = '✅ Driver Arrived'; statusText.textContent = 'Carlos is at your location'; if(etaLabel) etaLabel.textContent='ARRIVED'; document.getElementById('mob-eta').textContent = '0'; }
+  else if (phase === 'in_transit') { pill.textContent = '🏥 Heading to Destination'; statusText.textContent = 'En route to NYU Langone'; if(etaLabel) etaLabel.textContent='MIN TO DEST'; }
+  else if (phase === 'complete') { pill.textContent = '🎉 Arrived!'; statusText.textContent = 'You have arrived safely'; document.getElementById('mob-eta').textContent = '0'; }
+}
+
+// ─────────────────────────────────────────────
+// GPS POSITION
+// ─────────────────────────────────────────────
+function getGPSLocation() {
+  const btn = document.getElementById('gps-btn');
+  const btnText = document.getElementById('gps-btn-text');
+  btnText.textContent = '📡 Getting your location…';
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      memberPos = [pos.coords.latitude, pos.coords.longitude];
+      const addr = `📍 Location acquired (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`;
+      document.getElementById('pickup-input').value = addr;
+      btn.classList.add('locked');
+      btnText.textContent = '✓ GPS Location Locked';
+      showToast('📍','GPS Locked','Using your current location as pickup');
+    }, () => {
+      btnText.textContent = '⚠ Location denied — type address';
+      setTimeout(() => { btnText.textContent = 'Use My Current GPS Location'; btn.classList.remove('locked'); }, 2000);
+    }, {timeout:8000});
+  } else {
+    btnText.textContent = '⚠ Geolocation not supported';
+  }
+}
+
+// ─────────────────────────────────────────────
+// MEMBER FLOW
+// ─────────────────────────────────────────────
+function memberLogin() {
+  const id = document.getElementById('m-id-input').value || 'MB-1001';
+  const names = {'MB-1001':'Maria Johnson','MB-2002':'James Williams'};
+  const name = names[id] || 'Member';
+  document.getElementById('m-greeting').textContent = `Good morning, ${name.split(' ')[0]} 👋`;
+  gotoScreen('s-m-home');
+  setBN('bn-home');
+}
+
+const reqLabels = ['Step 1 of 4 — Pickup Location','Step 2 of 4 — Destination','Step 3 of 4 — Ride Details','Step 4 of 4 — Insurance & Confirm'];
+function showReqStep(n) {
+  document.querySelectorAll('.req-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('req-step-' + n)?.classList.add('active');
+  document.getElementById('req-step-label').textContent = reqLabels[n-1];
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('sdot-' + i);
+    const line = document.getElementById('sline-' + i);
+    dot.className = 'step-dot ' + (i < n ? 'done' : i === n ? 'active' : 'pending');
+    dot.textContent = i < n ? '✓' : i;
+    if (line) line.className = 'step-line' + (i < n ? ' done' : '');
+  }
+}
+function advanceReqStep() {
+  if (reqStep < 4) { reqStep++; showReqStep(reqStep); }
+  else confirmRideRequest();
+}
+
+function selectRideType(type) {
+  selectedRideType = type;
+  ['standard','xl','wheelchair','stretcher'].forEach(t => document.getElementById('rt-' + t).classList.toggle('selected', t === type));
+  const icons = {standard:'🚗 Standard', xl:'🚐 XL Van', wheelchair:'♿ Wheelchair WAV', stretcher:'🛏 Stretcher'};
+  document.getElementById('cs-type').textContent = icons[type];
+}
+function toggleRoundTrip(val) {
+  roundTrip = val;
+  document.getElementById('rt-yes').style.borderColor = val ? 'var(--sky)' : 'transparent';
+  document.getElementById('rt-yes').style.background = val ? 'var(--sky-light)' : 'var(--slate-100)';
+  document.getElementById('rt-no').style.borderColor = !val ? 'var(--sky)' : 'transparent';
+  document.getElementById('rt-no').style.background = !val ? 'var(--sky-light)' : 'var(--slate-100)';
+}
+function selectIns(ins) {
+  selectedIns = ins;
+  ['medicaid','medicare','private','self'].forEach(i => {
+    document.getElementById('ins-' + i).classList.toggle('selected', i === ins);
+    const check = document.getElementById('ins-check-' + i);
+    if (check) check.style.display = i === ins ? 'inline' : 'none';
+  });
+  const labels = {medicaid:'Medicaid', medicare:'Medicare', private:'Private Insurance', self:'Self-Pay'};
+  document.getElementById('cs-ins').textContent = labels[ins];
+  const price = document.querySelector('.pe-price');
+  const covered = document.querySelector('.pe-covered');
+  if (ins === 'self') { price.textContent = '$28.40'; covered.textContent = 'Estimated out-of-pocket'; }
+  else { price.textContent = '$0.00'; covered.textContent = `✓ Covered by ${labels[ins]}`; }
+  document.getElementById('cs-pickup').textContent = document.getElementById('pickup-input').value.substring(0, 30);
+  document.getElementById('cs-dest').textContent = document.getElementById('dest-input').value.substring(0, 30);
+}
+
+function confirmRideRequest() {
+  gotoScreen('s-m-searching');
+  setTimeout(() => {
+    gotoScreen('s-m-matched');
+    showToast('🎉','Driver Matched!','Carlos Rivera is 8 minutes away');
+    animateETA();
+  }, 3200);
+}
+
+function animateETA() {
+  let eta = 8;
+  const etaEl = document.getElementById('matched-eta');
+  const distEl = document.getElementById('matched-dist');
+  const dists = ['1.4 miles away','1.1 miles away','0.9 miles away','0.7 miles away','0.5 miles away'];
+  const iv = setInterval(() => {
+    if (eta <= 1) { clearInterval(iv); etaEl.textContent = '1'; distEl.textContent = '< 0.1 mi'; return; }
+    eta--; etaEl.textContent = eta;
+    distEl.textContent = dists[Math.min(8-eta, dists.length-1)];
+  }, 4000);
+}
+
+// ─────────────────────────────────────────────
+// DRIVER FLOW
+// ─────────────────────────────────────────────
+function driverLogin() {
+  const id = document.getElementById('d-id-input').value || 'DRV-101';
+  if (id === 'DRV-101') gotoScreen('s-d-home');
+  else { gotoScreen('s-d-onboard'); showOnboardStep(1); }
+}
+
+const obLabels = ['Step 1 of 5 — License & Identity','Step 2 of 5 — Vehicle Info','Step 3 of 5 — Insurance','Step 4 of 5 — Background & Certs','Step 5 of 5 — Vehicle Inspection'];
+function showOnboardStep(n) {
+  onboardStep = n;
+  document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('ob-step-' + n)?.classList.add('active');
+  document.getElementById('onboard-label').textContent = obLabels[n-1];
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.getElementById('odot-' + i);
+    const line = document.getElementById('oline-' + i);
+    dot.className = 'step-dot ' + (i < n ? 'done' : i === n ? 'active' : 'pending');
+    dot.textContent = i < n ? '✓' : i;
+    if (line) line.className = 'step-line' + (i < n ? ' done' : '');
+  }
+  if (n === 5) initInspectionTracking();
+}
+function advanceOnboardStep() {
+  if (onboardStep < 5) showOnboardStep(onboardStep + 1);
+}
+
+function selectVehicleType(type) {
+  selectedVehicleType = type;
+  ['sedan','van','wav','amb'].forEach(t => document.getElementById('vt-' + t)?.classList.toggle('selected', t === type));
+}
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  if (el.closest('#inspection-checklist')) updateInspection();
+}
+function initInspectionTracking() {
+  document.querySelectorAll('#inspection-checklist .check-item').forEach(el => el.classList.remove('checked'));
+  updateInspection();
+}
+function updateInspection() {
+  const items = document.querySelectorAll('#inspection-checklist .check-item');
+  const done = document.querySelectorAll('#inspection-checklist .check-item.checked').length;
+  document.getElementById('inspection-count').textContent = `${done} / ${items.length}`;
+  document.getElementById('inspection-bar').style.width = (done / items.length * 100) + '%';
+}
+function fakeUpload(zoneId, textId, successText) {
+  const zone = document.getElementById(zoneId);
+  if (zone.classList.contains('uploaded')) return;
+  document.getElementById(textId).textContent = '⏳ Processing…';
+  setTimeout(() => {
+    zone.classList.add('uploaded');
+    document.getElementById(textId).textContent = successText;
+  }, 800);
+}
+function finishOnboarding() {
+  showToast('✅','Validation Complete!','Welcome to HHAeXchange+ NEMT, Carlos!');
+  setTimeout(() => gotoScreen('s-d-home'), 1000);
+}
+
+function toggleAvailability() {
+  driverAvailable = !driverAvailable;
+  const toggle = document.getElementById('avail-toggle');
+  const label = document.getElementById('avail-label');
+  const sub = document.getElementById('avail-sub');
+  toggle.classList.toggle('on', driverAvailable);
+  label.textContent = driverAvailable ? 'You\'re Online' : 'Go Online';
+  sub.textContent = driverAvailable ? 'Receiving ride requests' : 'You\'re currently offline';
+  if (driverAvailable) {
+    showToast('🟢','You\'re Online!','Waiting for ride requests…');
+    setTimeout(() => showToast('🔔','New Ride Request!','Maria Johnson — 4.2 mi trip'), 4000);
+  }
+}
+
+// Accept timer for incoming ride
+function startAcceptTimer() {
+  let t = 30;
+  const arc = document.getElementById('timer-arc');
+  const num = document.getElementById('timer-num');
+  const circumference = 150.796;
+  if (acceptTimer) clearInterval(acceptTimer);
+  acceptTimer = setInterval(() => {
+    t--;
+    num.textContent = t;
+    const offset = circumference * (1 - t/30);
+    arc.style.strokeDashoffset = offset;
+    if (t <= 0) { clearInterval(acceptTimer); declineRide(); }
+  }, 1000);
+}
+function acceptRide() {
+  if (acceptTimer) clearInterval(acceptTimer);
+  showToast('✅','Ride Accepted!','Navigate to Maria\'s pickup location');
+  setTimeout(() => startDriverNav(), 800);
+}
+function declineRide() {
+  if (acceptTimer) clearInterval(acceptTimer);
+  showToast('❌','Ride Declined','Looking for next available driver…');
+  gotoScreen('s-d-home');
+}
+
+function startDriverNav() {
+  gotoScreen('s-d-navigate');
+  driverPos = [...driverStartPos];
+  if (!mapsInitialized.driverNav) {
+    setTimeout(() => { initDriverNavMap(); startDriverNavSim(); }, 300);
+  } else {
+    if (dNavDriverMarker) dNavDriverMarker.setLatLng(driverPos);
+    if (dNavRouteLine) dNavRouteLine.setLatLngs([driverPos, memberPos]);
+    if (driverNavMap) driverNavMap.fitBounds(L.latLngBounds([memberPos, driverPos]), {padding:[50,50]});
+    startDriverNavSim();
+  }
+}
+let dNavSimTimer = null;
+let dNavProgress = 0;
+function startDriverNavSim() {
+  dNavProgress = 0;
+  if (dNavSimTimer) clearTimeout(dNavSimTimer);
+  dNavSimTick();
+}
+function dNavSimTick() {
+  const dlat = memberPos[0] - driverPos[0];
+  const dlng = memberPos[1] - driverPos[1];
+  const dist = Math.sqrt(dlat*dlat + dlng*dlng);
+  if (dist < 0.0004) {
+    document.getElementById('d-pickup-eta').textContent = '0';
+    document.getElementById('d-pickup-dist').textContent = 'Arrived!';
+    document.getElementById('d-nav-progress').style.width = '100%';
+    return;
+  }
+  const step = Math.min(SPEED, dist);
+  driverPos = [driverPos[0] + (dlat/dist)*step, driverPos[1] + (dlng/dist)*step];
+  dNavProgress = Math.min(dNavProgress + 5, 95);
+  if (dNavDriverMarker) dNavDriverMarker.setLatLng(driverPos);
+  if (dNavRouteLine) dNavRouteLine.setLatLngs([driverPos, memberPos]);
+  const distKm = dist * 111;
+  document.getElementById('d-pickup-eta').textContent = Math.max(1, Math.round(distKm / 0.5));
+  document.getElementById('d-pickup-dist').textContent = distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)} mi`;
+  document.getElementById('d-nav-progress').style.width = dNavProgress + '%';
+  // Sync member tracking map
+  if (memberMap && driverMarker) {
+    driverMarker.setLatLng(driverPos);
+    if (routeLine) routeLine.setLatLngs([driverPos, memberPos]);
+  }
+  dNavSimTimer = setTimeout(dNavSimTick, 1200);
+}
+
+function driverArrivesAtPickup() {
+  if (dNavSimTimer) clearTimeout(dNavSimTimer);
+  showToast('📍','You\'ve Arrived!','Verify member identity before departing');
+  setTimeout(() => gotoScreen('s-d-verify'), 500);
+}
+
+function doVerifyCheck(item) {
+  item.classList.add('done');
+  const all = document.querySelectorAll('.vc-item');
+  const done = document.querySelectorAll('.vc-item.done');
+  if (done.length === all.length) {
+    document.getElementById('start-trip-btn').style.background = 'var(--driver-grad)';
+    showToast('✅','All Checks Passed','Ready to start trip!');
+  }
+}
+
+function startDriverTransit() {
+  gotoScreen('s-d-transit');
+  driverPos = [...memberPos]; // Driver is at pickup
+  if (!mapsInitialized.driverTransit) {
+    setTimeout(() => { initDriverTransitMap(); startTransitSim(); }, 300);
+  } else {
+    if (dTransitDriverMarker) dTransitDriverMarker.setLatLng(driverPos);
+    if (dTransitRouteLine) dTransitRouteLine.setLatLngs([driverPos, destPos]);
+    startTransitSim();
+  }
+  // Also sync member tracking to transit phase
+  if (simPhase !== 'to_dest') {
+    simPhase = 'to_dest';
+    if (routeLine && memberMap) routeLine.setLatLngs([driverPos, destPos]);
+    updateMemberTrackingUI('in_transit');
+  }
+}
+let dTransitSimTimer = null;
+let dTransitProgress = 0;
+function startTransitSim() {
+  dTransitProgress = 0;
+  if (dTransitSimTimer) clearTimeout(dTransitSimTimer);
+  dTransitTick();
+}
+function dTransitTick() {
+  const dlat = destPos[0] - driverPos[0];
+  const dlng = destPos[1] - driverPos[1];
+  const dist = Math.sqrt(dlat*dlat + dlng*dlng);
+  if (dist < 0.0004) {
+    document.getElementById('d-dest-eta').textContent = '0';
+    document.getElementById('d-transit-progress').style.width = '100%';
+    return;
+  }
+  const step = Math.min(SPEED * 1.2, dist);
+  driverPos = [driverPos[0] + (dlat/dist)*step, driverPos[1] + (dlng/dist)*step];
+  dTransitProgress = Math.min(dTransitProgress + 3, 95);
+  if (dTransitDriverMarker) dTransitDriverMarker.setLatLng(driverPos);
+  if (dTransitRouteLine) dTransitRouteLine.setLatLngs([driverPos, destPos]);
+  const distKm = dist * 111;
+  document.getElementById('d-dest-eta').textContent = Math.max(1, Math.round(distKm / 0.4));
+  document.getElementById('d-dest-dist').textContent = distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)} mi`;
+  document.getElementById('d-transit-progress').style.width = dTransitProgress + '%';
+  // Sync member map
+  if (memberMap && driverMarker) {
+    driverMarker.setLatLng(driverPos);
+    if (routeLine) routeLine.setLatLngs([driverPos, destPos]);
+  }
+  dTransitSimTimer = setTimeout(dTransitTick, 1200);
+}
+
+function completeTrip() {
+  if (dTransitSimTimer) clearTimeout(dTransitSimTimer);
+  showToast('🎉','Trip Complete!','Great job, Carlos! Earnings credited.');
+  setTimeout(() => gotoScreen('s-d-complete'), 800);
+}
+
+// ─────────────────────────────────────────────
+// RATING
+// ─────────────────────────────────────────────
+function rateStar(n) {
+  ratingValue = n;
+  const stars = document.querySelectorAll('.star');
+  stars.forEach((s, i) => s.classList.toggle('active', i < n));
+}
+
+// ─────────────────────────────────────────────
+// AI DISPATCH (Anthropic API)
+// ─────────────────────────────────────────────
+const AI_SYSTEM = `You are an AI dispatch assistant for HHAeXchange+ NEMT (Non-Emergency Medical Transportation). 
+You help members schedule rides, check driver status, understand insurance coverage, and answer questions about their medical transportation.
+Key info: Member Maria Johnson (MB-1001) has Medicaid coverage. She has a ride booked with driver Carlos Rivera (DRV-101) in a 2022 Toyota Sienna (blue, ABC-1234). 
+Current ride status: Driver is en route to pickup at 123 Ocean Ave, Brooklyn. Destination: NYU Langone Brooklyn. ETA varies.
+Be helpful, concise, and caring. Use emojis occasionally. Keep responses under 4 sentences.`;
+
+function openAIDispatch() {
+  document.getElementById('ai-modal').classList.add('open');
+}
+function closeAIDispatch() {
+  document.getElementById('ai-modal').classList.remove('open');
+}
+
+async function sendAI() {
+  const input = document.getElementById('ai-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addAIMsg(text, 'user');
+  aiHistory.push({role:'user', content:text});
+  const thinkId = addAIThinking();
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: AI_SYSTEM,
+        messages: aiHistory
+      })
+    });
+    const data = await res.json();
+    removeAIThinking(thinkId);
+    const reply = data.content?.[0]?.text || 'Sorry, I could not respond right now.';
+    aiHistory.push({role:'assistant', content:reply});
+    addAIMsg(reply, 'bot');
+  } catch(e) {
+    removeAIThinking(thinkId);
+    addAIMsg('Connection issue. Please try again.', 'bot');
+  }
+}
+
+let aiMsgCount = 0;
+function addAIMsg(text, role) {
+  const container = document.getElementById('ai-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-msg-wrap ' + (role === 'user' ? 'user' : '');
+  wrap.innerHTML = `<div class="ai-bubble ${role}">${text.replace(/\n/g,'<br>')}</div>`;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+function addAIThinking() {
+  const id = 'ait-' + (++aiMsgCount);
+  const container = document.getElementById('ai-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-msg-wrap'; wrap.id = id;
+  wrap.innerHTML = `<div class="ai-bubble bot thinking"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+  return id;
+}
+function removeAIThinking(id) {
+  document.getElementById(id)?.remove();
+}
+
+// Close AI modal on overlay click
+document.getElementById('ai-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAIDispatch();
+});
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+gotoScreen('s-welcome');
+document.getElementById('bottom-nav').style.display = 'none';
+</script>
+</body>
+</html>
